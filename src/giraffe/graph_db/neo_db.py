@@ -21,11 +21,20 @@ class NeoDB:
         self.log.info(f'Configuration file: {config_file_path}')
         self.config = configparser.ConfigParser()
         self.config.read(configurations_ini_file_path)
-        self.graph = Graph(uri=self.config['NEO4J']['HOST'],
-                           user=self.config['NEO4J']['USERNAME'],
-                           password=self.config['NEO4J']['PASSWORD'])
+
+        # Reading Neo4j connection details from configuration-file
+
+        self.host_address = self.config['NEO4J']['HOST']
+        self.username = self.config['NEO4J']['USERNAME']
+        self.password = self.config['NEO4J']['PASSWORD']
+
+        self.graph = Graph(
+            uri=self.host_address,
+            user=self.username,
+            password=self.password
+        )
         try:
             db_kernel_start = self.graph.database.kernel_start_time
         except ServiceUnavailable as _:
-            raise TechnicalError(f'Neo4j does not seem to be active at {self.config["NEO4J"]["HOST"]}')
+            raise TechnicalError(f'Neo4j does not seem to be active at {self.host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
