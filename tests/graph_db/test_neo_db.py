@@ -9,7 +9,7 @@ def test_neo_connection():
     # noinspection PyUnusedLocal
     is_service_available = False
     try:
-        _ = neo_db.Neo(host_address='127.0.0.1', username='neo4j', password='098098')
+        _ = neo_db.NeoDB(host_address='127.0.0.1', username='neo4j', password='098098')
         is_service_available = True
     except TechnicalError as e:
         log.error(str(e))

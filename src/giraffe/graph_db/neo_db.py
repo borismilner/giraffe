@@ -5,7 +5,7 @@ from giraffe.helpers import log_helper
 from py2neo import Graph
 
 
-class Neo:
+class NeoDB:
     def __init__(self, host_address: str, username: str, password: str):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.graph = Graph(uri=host_address, user=username, password=password)
