@@ -8,7 +8,9 @@ from py2neo import Graph
 
 
 class NeoDB:
-    __default_configurations_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../configuration/defaults.ini')
+    __module_folder = os.path.dirname(os.path.abspath(__file__))
+    __default_config_relative_to_module = '../configuration/defaults.ini'
+    __default_configurations_file = os.path.join(__module_folder, __default_config_relative_to_module)
 
     def __init__(self, configurations_ini_file_path: str = __default_configurations_file):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
