@@ -1,7 +1,11 @@
+.tox/
 .nox/
+.env
+.venv
 .pytest_cache/
 __pycache__/
-giraffe.egg-info/
+*.egg-info/
 giraffe_logs/
+target/
 *.log
-*.py[co]
+*.py[cod]
