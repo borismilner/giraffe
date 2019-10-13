@@ -11,6 +11,6 @@ class Neo:
         self.graph = Graph(uri=host_address, user=username, password=password)
         try:
             db_kernel_start = self.graph.database.kernel_start_time
-        except ServiceUnavailable as e:
+        except ServiceUnavailable as _:
             raise TechnicalError(f'Neo4j does not seem to be active at {host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
