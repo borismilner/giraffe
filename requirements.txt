@@ -1,3 +1,5 @@
+neobolt
+giraffe
 neo4j
 py2neo
 pytest
