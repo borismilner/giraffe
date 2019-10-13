@@ -1,5 +1,7 @@
 import os
 import configparser
+
+from neo4j import GraphDatabase
 from neobolt.exceptions import ServiceUnavailable
 
 from giraffe.exceptions.technical_error import TechnicalError
@@ -7,7 +9,7 @@ from giraffe.helpers import log_helper
 from py2neo import Graph
 
 
-class NeoDB:
+class NeoDB(object):
     __module_folder = os.path.dirname(os.path.abspath(__file__))
     __default_config_relative_to_module = '../configuration/defaults.ini'
     __default_configurations_file = os.path.join(__module_folder, __default_config_relative_to_module)
@@ -27,6 +29,9 @@ class NeoDB:
         self.host_address = self.config['NEO4J']['HOST']
         self.username = self.config['NEO4J']['USERNAME']
         self.password = self.config['NEO4J']['PASSWORD']
+        self.bolt_port = self.config['NEO4J']['BOLT_PORT']
+
+        # Connecting py2neo
 
         self.graph = Graph(
             uri=self.host_address,
@@ -34,8 +39,16 @@ class NeoDB:
             password=self.password
         )
 
+        # Connecting official bolt-driver
+
+        self.bolt_uri = f'bolt://{self.host_address}:{self.bolt_port}'
+        self._driver = GraphDatabase.driver(self.bolt_uri, auth=(self.username, self.password))
+
         try:
             db_kernel_start = self.graph.database.kernel_start_time
         except ServiceUnavailable as _:
             raise TechnicalError(f'Neo4j does not seem to be active at {self.host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
+
+    def close(self):
+        self._driver.close()
