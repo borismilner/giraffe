@@ -1,0 +1,2 @@
+class TechnicalError(Exception):
+    pass

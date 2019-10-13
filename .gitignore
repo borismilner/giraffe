@@ -1,0 +1,8 @@
+.idea/
+.nox/
+.pytest_cache/
+__pycache__/
+giraffe.egg-info/
+giraffe_logs/
+*.log
+*.py[co]
