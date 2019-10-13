@@ -1,6 +1,4 @@
-import os
-import configparser
-
+from giraffe.helpers.config_helper import ConfigHelper
 from neo4j import GraphDatabase
 from neobolt.exceptions import ServiceUnavailable
 
@@ -10,44 +8,27 @@ from py2neo import Graph
 
 
 class NeoDB(object):
-    __module_folder = os.path.dirname(os.path.abspath(__file__))
-    __default_config_relative_to_module = '../configuration/defaults.ini'
-    __default_configurations_file = os.path.join(__module_folder, __default_config_relative_to_module)
 
-    def __init__(self, configurations_ini_file_path: str = __default_configurations_file):
+    def __init__(self, config: ConfigHelper = ConfigHelper()):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
-        if not os.path.isfile(configurations_ini_file_path):
-            raise TechnicalError(f'{configurations_ini_file_path} does not exist.')
-
-        config_file_path = os.path.abspath(configurations_ini_file_path)
-        self.log.info(f'Configuration file: {config_file_path}')
-        self.config = configparser.ConfigParser()
-        self.config.read(configurations_ini_file_path)
-
-        # Reading Neo4j connection details from configuration-file
-
-        self.host_address = self.config['NEO4J']['HOST']
-        self.username = self.config['NEO4J']['USERNAME']
-        self.password = self.config['NEO4J']['PASSWORD']
-        self.bolt_port = self.config['NEO4J']['BOLT_PORT']
 
         # Connecting py2neo
 
         self.graph = Graph(
-            uri=self.host_address,
-            user=self.username,
-            password=self.password
+            uri=config.host_address,
+            user=config.username,
+            password=config.password
         )
 
         # Connecting official bolt-driver
 
-        self.bolt_uri = f'bolt://{self.host_address}:{self.bolt_port}'
-        self._driver = GraphDatabase.driver(self.bolt_uri, auth=(self.username, self.password))
+        self._driver = GraphDatabase.driver(uri=config.bolt_uri,
+                                            auth=(config.username, config.password))
 
         try:
             db_kernel_start = self.graph.database.kernel_start_time
         except ServiceUnavailable as _:
-            raise TechnicalError(f'Neo4j does not seem to be active at {self.host_address}')
+            raise TechnicalError(f'Neo4j does not seem to be active at {config.host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
 
     def close(self):
