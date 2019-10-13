@@ -33,6 +33,7 @@ class NeoDB:
             user=self.username,
             password=self.password
         )
+
         try:
             db_kernel_start = self.graph.database.kernel_start_time
         except ServiceUnavailable as _:
