@@ -64,6 +64,8 @@ class NeoDB(object):
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
+
+        self.create_index_if_not_exists(label=label, property_name='_uid')
         if label is None:
             label = nodes[0]['_label']
         query = f"""
@@ -75,15 +77,17 @@ class NeoDB(object):
         summary = self.run_query(query=query, nodes=nodes)
         return summary
 
-    def merge_edges(self, edges: List, edge_type: str = None) -> BoltStatementResultSummary:
+    # NOTE: while it is possible to match without the from/to labels - it is too slow.
+    def merge_edges(self, edges: List, from_label: str, to_label: str, edge_type: str = None) -> BoltStatementResultSummary:
         if edge_type is None:
             edge_type = edges[0]['_edgeType']
         query = f"""
         UNWIND $edges as edge
-        MATCH (fromNode) WHERE fromNode._uid = edge._fromUid
-        MATCH (toNode) WHERE toNode._uid = edge._toUid
+        MATCH (fromNode:{from_label}) WHERE fromNode._uid = edge._fromUid
+        MATCH (toNode:{to_label}) WHERE toNode._uid = edge._toUid
         MERGE (fromNode)-[r:{edge_type}]->(toNode)
         """
+
         summary = self.run_query(query=query, edges=edges)
         return summary
 
@@ -96,6 +100,7 @@ class NeoDB(object):
 
         if self.is_index_exists(label=label, property_name=property_name):
             return None
+        self.log.info(f'Creating index on {label}.{property_name}')
         query = f'CREATE INDEX ON :{label}({property_name})'
         summary = self.run_query(query=query)
         return summary
@@ -104,5 +109,5 @@ class NeoDB(object):
         query = f'DROP INDEX ON :{label}({property_name})'
         summary: BoltStatementResultSummary = self.run_query(query=query)
         indexes_removed = summary.counters.indexes_removed
-        self.log.debug(f'Dropped {indexes_removed} [{label}.{property_name}]')
+        self.log.debug(f'Dropped {indexes_removed} index: {label}.{property_name}]')
         return summary
