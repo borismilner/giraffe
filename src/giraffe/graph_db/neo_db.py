@@ -75,12 +75,14 @@ class NeoDB(object):
         summary = self.run_query(query=query, nodes=nodes)
         return summary
 
-    def merge_edges(self, edges: List) -> BoltStatementResultSummary:
-        query = """
+    def merge_edges(self, edges: List, edge_type: str = None) -> BoltStatementResultSummary:
+        if edge_type is None:
+            edge_type = edges[0]['_edgeType']
+        query = f"""
         UNWIND $edges as edge
         MATCH (fromNode) WHERE fromNode._uid = edge._fromUid
         MATCH (toNode) WHERE toNode._uid = edge._toUid
-        MERGE (fromNode)-[r:node._edgeType]->(toNode)
+        MERGE (fromNode)-[r:{edge_type}]->(toNode)
         """
         summary = self.run_query(query=query, edges=edges)
         return summary

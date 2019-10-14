@@ -13,6 +13,7 @@ neo: neo_db.NeoDB
 number_of_test_nodes = 1000
 
 test_nodes = [{'_uid': i, '_label': test_label, 'age': i ** 2} for i in range(0, number_of_test_nodes)]
+test_edges = [{'_fromUid': i, '_toUid': i * 2, '_edgeType': test_edge_type} for i in range(0, int(number_of_test_nodes / 2))]
 
 
 def purge_test_data():
@@ -57,7 +58,8 @@ def test_merge_nodes():
 def test_merge_edges():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.pull_query(query=None)
+    summary = db.merge_edges(edges=test_edges)
+    pass
 
 
 def test_create_index_if_not_exists():
