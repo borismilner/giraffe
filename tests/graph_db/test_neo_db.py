@@ -1,3 +1,4 @@
+import time
 from logging import Logger
 
 import pytest
@@ -31,7 +32,7 @@ def test_merge_nodes():
     global log
     neo = neo_db.NeoDB()
     nodes = [
-        {'_uid': 1, 'name': 'Boris', 'has': 'tv'},
+        {'_uid': 1, 'name': 'Boris', 'has': 'tv', 'birthday': time.time()},
         {'_uid': 2, 'name': 'Milner', 'has': 'laptop'},
     ]
     neo.merge_nodes(nodes=nodes)
