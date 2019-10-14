@@ -1,5 +1,5 @@
+import atexit
 from typing import List, Union
-
 from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.helpers.config_helper import ConfigHelper
 from neo4j import GraphDatabase, BoltStatementResultSummary, BoltStatementResult
@@ -34,6 +34,8 @@ class NeoDB(object):
         except ServiceUnavailable as _:
             raise TechnicalError(f'Neo4j does not seem to be active at {config.host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
+
+        atexit.register(self.__exit__)
 
     def __enter__(self):
         return self

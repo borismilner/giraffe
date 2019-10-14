@@ -51,7 +51,6 @@ def init__and_finalize():
     delete_test_data()
     yield  # Commands beyond this line will be called after the last test
     delete_test_data()
-    neo.close()
 
 
 @pytest.fixture(autouse=True)
