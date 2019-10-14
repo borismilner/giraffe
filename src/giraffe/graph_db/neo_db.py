@@ -10,6 +10,7 @@ from giraffe.helpers import log_helper
 from py2neo import Graph
 
 
+# noinspection SqlDialectInspection,SqlNoDataSourceInspection
 class NeoDB(object):
 
     def __init__(self, config: ConfigHelper = ConfigHelper()):
