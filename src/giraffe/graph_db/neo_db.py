@@ -38,11 +38,12 @@ class NeoDB(object):
     def merge_nodes(self, nodes: List):
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
+        # TODO: Consider saving date-time as epoch seconds/milliseconds
         query = """
         UNWIND $nodes as node
         MERGE (p:PERSON{_uid: node._uid})
-        ON CREATE SET p = node, p._created = timestamp()
-        ON MATCH SET p += node, p._last_seen = timestamp()
+        ON CREATE SET p = node, p._created = datetime()
+        ON MATCH SET p += node, p._last_seen = datetime()
         """
         with self._driver.session() as session:
             with session.begin_transaction() as tx:
