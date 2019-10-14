@@ -7,8 +7,11 @@ from giraffe.graph_db import neo_db
 from giraffe.helpers import log_helper
 
 log: Logger
-test_label = 'DELETEME'
+test_label = 'TEST_LABEL'
+test_edge_type = 'TEST_EDGE'
 neo: neo_db.NeoDB
+
+test_nodes = [{'_uid': i, '_label': test_label} for i in range(0, 100)]
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -38,7 +41,12 @@ def test_neo_connection():
 def test_merge_nodes():
     global log, neo
     nodes = [
-        {'_uid': 1, 'name': 'Boris', 'has': 'tv', 'birthday': time.time()},
-        {'_uid': 2, 'name': 'Milner', 'has': 'laptop'},
+        {'_uid': 1, '_label': test_label, 'name': 'Boris', 'has': 'tv', 'birthday': time.time()},
+        {'_uid': 2, '_label': test_label, 'name': 'Milner', 'has': 'laptop'},
     ]
-    neo.merge_nodes(nodes=nodes)
+    summary = neo.merge_nodes(nodes=nodes)
+    pass
+
+
+def test_merge_edges():
+    global log, neo

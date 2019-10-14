@@ -51,13 +51,16 @@ class NeoDB(object):
                 tx.success = True
         return summary
 
-    def merge_nodes(self, nodes: List) -> BoltStatementResultSummary:
+    # NOTE: since UNWIND won't allow dynamic labels - all nodes in the batch must have the same label.
+    def merge_nodes(self, nodes: List, label: str = None) -> BoltStatementResultSummary:
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
-        query = """
+        if label is None:
+            label = nodes[0]['_label']
+        query = f"""
         UNWIND $nodes as node
-        MERGE (p:PERSON{_uid: node._uid})
+        MERGE (p:{label}{{_uid: node._uid}})
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_seen = datetime()
         """
