@@ -1,6 +1,6 @@
 from typing import List
 from giraffe.helpers.config_helper import ConfigHelper
-from neo4j import GraphDatabase, Session
+from neo4j import GraphDatabase
 from neobolt.exceptions import ServiceUnavailable
 
 from giraffe.exceptions.technical_error import TechnicalError
