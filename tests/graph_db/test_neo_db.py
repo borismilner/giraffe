@@ -104,3 +104,6 @@ def test_drop_index_if_exists():
     db.drop_index_if_exists(label=test_label, property_name=test_property)
     summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
     assert summary is None
+    db.create_index_if_not_exists(label=test_label, property_name=test_property)
+    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
+    assert summary.counters.indexes_removed == 1
