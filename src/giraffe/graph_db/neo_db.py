@@ -64,4 +64,9 @@ class NeoDB(object):
         self.run_query(query=query, nodes=nodes)
 
     def merge_edges(self):
-        pass
+        query = """
+        UNWIND $edges as edge
+        MATCH (fromNode) WHERE fromNode._uid = edge._fromUid
+        MATCH (toNode) WHERE toNode._uid = edge._toUid
+        MERGE (fromNode)-[r:node._edgeType]->(toNode)
+        """
