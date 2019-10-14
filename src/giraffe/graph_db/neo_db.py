@@ -1,9 +1,11 @@
 from typing import List
+
+from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.helpers.config_helper import ConfigHelper
 from neo4j import GraphDatabase
-from neobolt.exceptions import ServiceUnavailable
+from neobolt.exceptions import ServiceUnavailable, CypherSyntaxError
 
-from giraffe.exceptions.technical_error import TechnicalError
+from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
 from py2neo import Graph
 
@@ -35,6 +37,18 @@ class NeoDB(object):
     def close(self):
         self._driver.close()
 
+    def run_query(self, query: str, **parameters):
+        with self._driver.session() as session:
+            with session.begin_transaction() as tx:
+                result = tx.run(query, **parameters)
+                try:
+                    result.consume()
+                except CypherSyntaxError as e:
+                    tx.success = False
+                    tx.close()
+                    raise QuerySyntaxError(e)
+                tx.success = True
+
     def merge_nodes(self, nodes: List):
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
@@ -45,11 +59,8 @@ class NeoDB(object):
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_seen = datetime()
         """
-        with self._driver.session() as session:
-            with session.begin_transaction() as tx:
-                result = tx.run(query, nodes=nodes)
-                print(result)
-                tx.success = True
+
+        self.run_query(query=query, nodes=nodes)
 
     def merge_edges(self):
         pass

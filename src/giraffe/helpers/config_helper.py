@@ -1,7 +1,7 @@
 import os
 import configparser
 
-from giraffe.exceptions.technical_error import TechnicalError
+from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
 
 

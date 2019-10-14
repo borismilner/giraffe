@@ -1,0 +1,2 @@
+class QuerySyntaxError(Exception):
+    pass

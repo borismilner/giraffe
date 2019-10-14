@@ -3,7 +3,7 @@ import sys
 import logging
 from logging.handlers import RotatingFileHandler
 
-from giraffe.exceptions.technical_error import TechnicalError
+from giraffe.exceptions.technical import TechnicalError
 
 
 def get_logger(logger_name: str, storage_folder: str = '.', level: int = logging.DEBUG) -> logging.Logger:

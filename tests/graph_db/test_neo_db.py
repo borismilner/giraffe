@@ -2,7 +2,7 @@ import time
 from logging import Logger
 
 import pytest
-from giraffe.exceptions.technical_error import TechnicalError
+from giraffe.exceptions.technical import TechnicalError
 from giraffe.graph_db import neo_db
 from giraffe.helpers import log_helper
 
