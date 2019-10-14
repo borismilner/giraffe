@@ -35,7 +35,10 @@ class NeoDB(object):
             raise TechnicalError(f'Neo4j does not seem to be active at {config.host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
 
-    def close(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
         self._driver.close()
 
     def run_query(self, query: str, **parameters) -> BoltStatementResultSummary:
