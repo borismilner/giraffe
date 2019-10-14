@@ -51,7 +51,7 @@ class NeoDB(object):
                 tx.success = True
         return summary
 
-    def merge_nodes(self, nodes: List):
+    def merge_nodes(self, nodes: List) -> BoltStatementResultSummary:
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
@@ -61,13 +61,15 @@ class NeoDB(object):
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_seen = datetime()
         """
-        self.run_query(query=query, nodes=nodes)
+        summary = self.run_query(query=query, nodes=nodes)
+        return summary
 
-    def merge_edges(self, edges: List):
+    def merge_edges(self, edges: List) -> BoltStatementResultSummary:
         query = """
         UNWIND $edges as edge
         MATCH (fromNode) WHERE fromNode._uid = edge._fromUid
         MATCH (toNode) WHERE toNode._uid = edge._toUid
         MERGE (fromNode)-[r:node._edgeType]->(toNode)
         """
-        self.run_query(query=query, edges=edges)
+        summary = self.run_query(query=query, edges=edges)
+        return summary
