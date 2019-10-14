@@ -16,10 +16,10 @@ def do_something():
     global log, neo
     log = log_helper.get_logger(logger_name='testing')
     neo = neo_db.NeoDB()
-    log.debug(f'Deleting all nodes with label: {test_label}')
+    log.debug(f'Purging all nodes with label: {test_label}')
     query = f'MATCH (node:{test_label}) DETACH DELETE node'
     summary = neo.run_query(query=query)
-    log.debug(f'Removed {summary.counters.nodes_deleted} nodes.')
+    log.debug(f'Removed {summary.counters.nodes_deleted} {test_label} nodes.')
 
 
 def test_neo_connection():
