@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Union
 
 from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.helpers.config_helper import ConfigHelper
-from neo4j import GraphDatabase, BoltStatementResultSummary
+from neo4j import GraphDatabase, BoltStatementResultSummary, BoltStatementResult
 from neobolt.exceptions import ServiceUnavailable, CypherSyntaxError
 
 from giraffe.exceptions.technical import TechnicalError
@@ -51,6 +51,13 @@ class NeoDB(object):
                 tx.success = True
         return summary
 
+    def pull_query(self, query: str):
+        summary: BoltStatementResult
+        with self._driver.session() as session:
+            with session.begin_transaction() as tx:
+                result = tx.run(query)
+                return result
+
     # NOTE: since UNWIND won't allow dynamic labels - all nodes in the batch must have the same label.
     def merge_nodes(self, nodes: List, label: str = None) -> BoltStatementResultSummary:
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
@@ -75,4 +82,24 @@ class NeoDB(object):
         MERGE (fromNode)-[r:node._edgeType]->(toNode)
         """
         summary = self.run_query(query=query, edges=edges)
+        return summary
+
+    def is_index_exists(self, label: str, property_name: str):
+        query = f'CALL db.indexes() YIELD tokenNames, properties WHERE "{label}" IN tokenNames AND "{property_name}" IN properties RETURN count(*) AS count'
+        count = self.pull_query(query=query).value()[0]
+        return count > 0
+
+    def create_index_if_not_exists(self, label: str, property_name: str) -> Union[BoltStatementResultSummary, None]:
+
+        if self.is_index_exists(label=label, property_name=property_name):
+            return None
+        query = f'CREATE INDEX ON :{label}({property_name})'
+        summary = self.run_query(query=query)
+        return summary
+
+    def drop_index(self, label: str, property_name: str) -> BoltStatementResultSummary:
+        query = f'DROP INDEX ON :{label}({property_name})'
+        summary: BoltStatementResultSummary = self.run_query(query=query)
+        indexes_removed = summary.counters.indexes_removed
+        self.log.debug(f'Dropped {indexes_removed} [{label}.{property_name}]')
         return summary

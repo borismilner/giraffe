@@ -8,10 +8,11 @@ from giraffe.helpers import log_helper
 log: Logger
 test_label = 'TEST_LABEL'
 test_edge_type = 'TEST_EDGE'
+test_property = 'age'
 neo: neo_db.NeoDB
 number_of_test_nodes = 1000
 
-test_nodes = [{'_uid': i, '_label': test_label} for i in range(0, number_of_test_nodes)]
+test_nodes = [{'_uid': i, '_label': test_label, 'age': i ** 2} for i in range(0, number_of_test_nodes)]
 
 
 def purge_test_data():
@@ -23,7 +24,7 @@ def purge_test_data():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def do_something():
+def init__and_finalize():
     global log, neo
     log = log_helper.get_logger(logger_name='testing')
     neo = neo_db.NeoDB()
@@ -48,10 +49,23 @@ def test_neo_connection():
 
 def test_merge_nodes():
     global log, neo
-
-    summary = neo.merge_nodes(nodes=test_nodes, label=test_label)
+    db: neo_db.NeoDB = neo
+    summary = db.merge_nodes(nodes=test_nodes, label=test_label)
     assert summary.counters.nodes_created == len(test_nodes)
 
 
 def test_merge_edges():
     global log, neo
+    db: neo_db.NeoDB = neo
+    db.pull_query(query=None)
+
+
+def test_create_index_if_not_exists():
+    global log, neo
+    db: neo_db.NeoDB = neo
+    if db.is_index_exists(label=test_label, property_name=test_property):
+        db.drop_index(label=test_label, property_name=test_property)
+    summary = db.create_index_if_not_exists(label=test_label, property_name=test_property)
+    assert summary.counters.indexes_added == 1
+    summary = db.drop_index(label=test_label, property_name=test_property)
+    assert summary.counters.indexes_removed == 1
