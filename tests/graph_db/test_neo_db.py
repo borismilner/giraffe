@@ -30,5 +30,8 @@ def test_neo_connection():
 def test_merge_nodes():
     global log
     neo = neo_db.NeoDB()
-    nodes = [{'_uid': 1, 'name': 'Boris', 'boom': 'tv'}]
+    nodes = [
+        {'_uid': 1, 'name': 'Boris', 'has': 'tv'},
+        {'_uid': 2, 'name': 'Milner', 'has': 'laptop'},
+    ]
     neo.merge_nodes(nodes=nodes)
