@@ -59,7 +59,6 @@ class NeoDB(object):
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_seen = datetime()
         """
-
         self.run_query(query=query, nodes=nodes)
 
     def merge_edges(self):
