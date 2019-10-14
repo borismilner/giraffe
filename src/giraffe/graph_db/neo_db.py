@@ -2,7 +2,7 @@ from typing import List
 
 from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.helpers.config_helper import ConfigHelper
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, BoltStatementResultSummary
 from neobolt.exceptions import ServiceUnavailable, CypherSyntaxError
 
 from giraffe.exceptions.technical import TechnicalError
@@ -37,17 +37,19 @@ class NeoDB(object):
     def close(self):
         self._driver.close()
 
-    def run_query(self, query: str, **parameters):
+    def run_query(self, query: str, **parameters) -> BoltStatementResultSummary:
+        summary: BoltStatementResultSummary
         with self._driver.session() as session:
             with session.begin_transaction() as tx:
                 result = tx.run(query, **parameters)
                 try:
-                    result.consume()
+                    summary = result.consume()
                 except CypherSyntaxError as e:
                     tx.success = False
                     tx.close()
                     raise QuerySyntaxError(e)
                 tx.success = True
+        return summary
 
     def merge_nodes(self, nodes: List):
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
