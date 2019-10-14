@@ -10,7 +10,7 @@ test_label = 'TEST_LABEL'
 test_edge_type = 'TEST_EDGE'
 test_property = 'indexed_property'
 neo: neo_db.NeoDB
-number_of_test_nodes = 1000
+number_of_test_nodes = 1_000
 number_of_test_edges = int(number_of_test_nodes / 2)
 
 test_nodes = [
