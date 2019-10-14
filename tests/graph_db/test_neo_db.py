@@ -13,8 +13,20 @@ neo: neo_db.NeoDB
 number_of_test_nodes = 1000
 number_of_test_edges = int(number_of_test_nodes / 2)
 
-test_nodes = [{'_uid': i, '_label': test_label, 'age': i ** 2} for i in range(0, number_of_test_nodes)]
-test_edges = [{'_fromLabel': test_label, '_fromUid': i, '_toLabel': test_label, '_toUid': i * 2, '_edgeType': test_edge_type} for i in range(0, int(number_of_test_nodes / 2))]
+test_nodes = [
+    {'_uid': i,
+     '_label': test_label,
+     'age': i ** 2}
+    for i in range(0, number_of_test_nodes)
+]
+test_edges = [
+    {'_fromLabel': test_label,
+     '_fromUid': i,
+     '_toLabel': test_label,
+     '_toUid': i * 2,
+     '_edgeType': test_edge_type}
+    for i in range(0, int(number_of_test_nodes / 2))
+]
 
 
 def delete_test_data():
