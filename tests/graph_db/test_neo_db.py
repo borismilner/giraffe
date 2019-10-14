@@ -8,7 +8,7 @@ from giraffe.helpers import log_helper
 log: Logger
 test_label = 'TEST_LABEL'
 test_edge_type = 'TEST_EDGE'
-test_property = 'age'
+test_property = 'indexed_property'
 neo: neo_db.NeoDB
 number_of_test_nodes = 1000
 number_of_test_edges = int(number_of_test_nodes / 2)
@@ -80,9 +80,16 @@ def test_merge_edges():
 def test_create_index_if_not_exists():
     global log, neo
     db: neo_db.NeoDB = neo
-    if db.is_index_exists(label=test_label, property_name=test_property):
-        db.drop_index(label=test_label, property_name=test_property)
+    db.drop_index_if_exists(label=test_label, property_name=test_property)
     summary = db.create_index_if_not_exists(label=test_label, property_name=test_property)
     assert summary.counters.indexes_added == 1
-    summary = db.drop_index(label=test_label, property_name=test_property)
+    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
     assert summary.counters.indexes_removed == 1
+
+
+def test_drop_index_if_exists():
+    global log, neo
+    db: neo_db.NeoDB = neo
+    db.drop_index_if_exists(label=test_label, property_name=test_property)
+    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
+    assert summary is None

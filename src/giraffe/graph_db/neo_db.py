@@ -105,7 +105,10 @@ class NeoDB(object):
         summary = self.run_query(query=query)
         return summary
 
-    def drop_index(self, label: str, property_name: str) -> BoltStatementResultSummary:
+    def drop_index_if_exists(self, label: str, property_name: str) -> Union[BoltStatementResultSummary, None]:
+        if not self.is_index_exists(label=label, property_name=property_name):
+            self.log.warning(f'Will not drop index on {label}.{property_name} since is does not exist.')
+            return None
         query = f'DROP INDEX ON :{label}({property_name})'
         summary: BoltStatementResultSummary = self.run_query(query=query)
         indexes_removed = summary.counters.indexes_removed
