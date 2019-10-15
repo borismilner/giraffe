@@ -1,12 +1,18 @@
 import time
 from typing import List
+
+from giraffe.helpers import log_helper
 from giraffe.helpers.utilities import Timer
 from giraffe.helpers.neo_multiprocessing import MultiProcHelper
 
-sleep_time_simulation_sec = 0.25
+import multiprocessing as mp
+
+sleep_time_simulation_sec = 2.25
 
 
 def processing_function(batch: List, time_to_sleep: float = sleep_time_simulation_sec):
+    log = log_helper.get_logger(logger_name=mp.current_process().name)  # Separate log file for each process for simplicity
+    log.debug(f'Sleeping for {sleep_time_simulation_sec}')
     time.sleep(time_to_sleep)  # Simulate some work
     return len(batch)
 
