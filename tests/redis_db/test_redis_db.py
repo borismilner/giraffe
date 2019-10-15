@@ -74,3 +74,6 @@ def test_populate_sorted_set():
     db_keys = r.keys()
     assert len(db_keys) == math.ceil(config.number_of_test_nodes / config.test_chunk_size)
     assert set(expected_keys) == set(key.decode('utf8') for key in db_keys)
+    for key in db_keys:
+        batch_size = r.zcard(key)
+        assert batch_size == config.test_chunk_size or batch_size == config.number_of_test_nodes % config.test_chunk_size
