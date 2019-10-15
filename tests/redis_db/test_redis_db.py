@@ -1,6 +1,7 @@
 from logging import Logger
 
 import pytest
+from giraffe.configuration.common_testing_artifactrs import *
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.tools.redis_db import RedisDB

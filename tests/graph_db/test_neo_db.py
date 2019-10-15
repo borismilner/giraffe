@@ -1,7 +1,7 @@
 from logging import Logger
 
 import pytest
-from giraffe.configuration.common import *
+from giraffe.configuration.common_testing_artifactrs import *
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.graph_db import neo_db
 from giraffe.helpers import log_helper
