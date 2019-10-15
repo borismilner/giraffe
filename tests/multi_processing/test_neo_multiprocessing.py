@@ -1,4 +1,5 @@
 import time
+import math
 from typing import List
 
 from giraffe.helpers import log_helper
@@ -7,7 +8,7 @@ from giraffe.helpers.neo_multiprocessing import MultiProcHelper
 
 import multiprocessing as mp
 
-sleep_time_simulation_sec = 2.25
+sleep_time_simulation_sec = 0.25
 
 
 def processing_function(batch: List, time_to_sleep: float = sleep_time_simulation_sec):
@@ -23,9 +24,8 @@ def test_neo_multi_proc_helper():
     test_batch_size = 50_000
     list_to_process = [i for i in range(0, test_number_of_items)]
 
-    number_of_whole_batches = test_number_of_items // test_batch_size
     last_batch_size = test_number_of_items % test_batch_size
-    expected_number_of_batches = number_of_whole_batches + (1 if last_batch_size != 0 else 0)
+    expected_number_of_batches = math.ceil(test_number_of_items / test_batch_size)
     expected_time_without_multi_processing = expected_number_of_batches * sleep_time_simulation_sec
 
     mph = MultiProcHelper()

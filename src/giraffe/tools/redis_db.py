@@ -1,6 +1,8 @@
 import redis
 import atexit
 
+from typing import List
+
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from redis import Redis
@@ -25,3 +27,7 @@ class RedisDB(object):
     def purge_all(self):
         self.log.debug('Purging redis!')
         self._driver.flushall()
+
+    def populate_sorted_set(self, key: str, score: int, values: List):
+        r: Redis = self._driver
+        r.zadd(key, {str(value): score for value in values})
