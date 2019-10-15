@@ -42,6 +42,7 @@ class RedisDB(object):
         # noinspection PyRedundantParentheses
         return ('a' if entity_type == 'nodes' else 'z', int(match.group(3)))
 
+    # TODO: COMPLETE THIS ONE
     def pull_job_batches(self, job_name: str):
         r: Redis = self._driver
         all_keys: List[str] = r.keys()
