@@ -34,3 +34,11 @@ class ConfigHelper:
         self.redis_username = self.config['REDIS']['USERNAME']
         self.redis_password = self.config['REDIS']['PASSWORD']
         self.redis_port = self.config['REDIS']['PORT']
+
+        # Unit-Testing settings
+
+        self.test_label = self.config['TESTING']['test_label']
+        self.test_edge_type = self.config['TESTING']['test_edge_type']
+        self.test_property = self.config['TESTING']['test_property']
+        self.number_of_test_nodes = int(self.config['TESTING']['number_of_test_nodes'])
+        self.number_of_test_edges = int(self.config['TESTING']['number_of_test_edges'])

@@ -4,43 +4,41 @@ import pytest
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.graph_db import neo_db
 from giraffe.helpers import log_helper
+from giraffe.helpers.config_helper import ConfigHelper
+
+config = ConfigHelper()
 
 log: Logger
-test_label = 'TEST_LABEL'
-test_edge_type = 'TEST_EDGE'
-test_property = 'indexed_property'
 neo: neo_db.NeoDB
-number_of_test_nodes = 1_000
-number_of_test_edges = int(number_of_test_nodes / 2)
 
 test_nodes = [
     {'_uid': i,
-     '_label': test_label,
+     '_label': config.test_label,
      'age': i ** 2}
-    for i in range(0, number_of_test_nodes)
+    for i in range(0, int(config.number_of_test_nodes))
 ]
 test_edges = [
-    {'_fromLabel': test_label,
+    {'_fromLabel': config.test_label,
      '_fromUid': i,
-     '_toLabel': test_label,
+     '_toLabel': config.test_label,
      '_toUid': i * 2,
-     '_edgeType': test_edge_type}
-    for i in range(0, int(number_of_test_nodes / 2))
+     '_edgeType': config.test_edge_type}
+    for i in range(0, int(config.number_of_test_edges))
 ]
 
 
 def delete_test_data():
     global log, neo
-    log.debug(f'Purging all nodes with label: {test_label}')
-    query = f'MATCH (node:{test_label}) DETACH DELETE node'
+    log.debug(f'Purging all nodes with label: {config.test_label}')
+    query = f'MATCH (node:{config.test_label}) DETACH DELETE node'
     summary = neo.run_query(query=query)
-    log.debug(f'Removed {summary.counters.nodes_deleted} {test_label} nodes.')
+    log.debug(f'Removed {summary.counters.nodes_deleted} {config.test_label} nodes.')
 
 
 def init_test_data():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.merge_nodes(nodes=test_nodes, label=test_label)
+    db.merge_nodes(nodes=test_nodes, label=config.test_label)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -77,33 +75,33 @@ def test_merge_nodes():
     global log, neo
     db: neo_db.NeoDB = neo
     delete_test_data()
-    summary = db.merge_nodes(nodes=test_nodes, label=test_label)
+    summary = db.merge_nodes(nodes=test_nodes, label=config.test_label)
     assert summary.counters.nodes_created == len(test_nodes)
 
 
 def test_merge_edges():
     global log, neo
     db: neo_db.NeoDB = neo
-    summary = db.merge_edges(edges=test_edges, from_label=test_label, to_label=test_label)
-    assert summary.counters.relationships_created == number_of_test_edges
+    summary = db.merge_edges(edges=test_edges, from_label=config.test_label, to_label=config.test_label)
+    assert summary.counters.relationships_created == config.number_of_test_edges
 
 
 def test_create_index_if_not_exists():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.drop_index_if_exists(label=test_label, property_name=test_property)
-    summary = db.create_index_if_not_exists(label=test_label, property_name=test_property)
+    db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
+    summary = db.create_index_if_not_exists(label=config.test_label, property_name=config.test_property)
     assert summary.counters.indexes_added == 1
-    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
+    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
     assert summary.counters.indexes_removed == 1
 
 
 def test_drop_index_if_exists():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.drop_index_if_exists(label=test_label, property_name=test_property)
-    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
+    db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
+    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
     assert summary is None
-    db.create_index_if_not_exists(label=test_label, property_name=test_property)
-    summary = db.drop_index_if_exists(label=test_label, property_name=test_property)
+    db.create_index_if_not_exists(label=config.test_label, property_name=config.test_property)
+    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
     assert summary.counters.indexes_removed == 1
