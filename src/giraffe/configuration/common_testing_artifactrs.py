@@ -19,5 +19,5 @@ test_edges = [
         '_toUid': i * 2,
         '_edgeType': config.test_edge_type
     }
-    for i in range(0, config.number_of_test_edges)
+    for i in range(1, config.number_of_test_edges)
 ]
