@@ -36,10 +36,12 @@ def delete_test_data():
 def init_test_data():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
-    request_id = config.test_request_id
-    bathes = list_as_chunks(the_list=test_nodes, chunk_size=config.test_chunk_size)
-    for i, batch in enumerate(bathes):
-        db.populate_sorted_set(key=f'{request_id}:Batch_{i}', score=0, values=batch)
+
+    for request_id, graph_entities in ((config.test_request_id_for_nodes, test_nodes),
+                                       (config.test_request_id_for_edges, test_edges)):
+        bathes = list_as_chunks(the_list=graph_entities, chunk_size=config.test_chunk_size)
+        for i, batch in enumerate(bathes):
+            db.populate_sorted_set(key=f'{request_id}:Batch_{i}', score=0, values=batch)
 
 
 @pytest.fixture(autouse=True)
@@ -61,7 +63,7 @@ def test_populate_sorted_set():
     delete_test_data()
     db: RedisDB = redis_db
     r: Redis = redis_driver
-    request_id = config.test_request_id
+    request_id = config.test_request_id_for_nodes
     bathes = list_as_chunks(the_list=test_nodes, chunk_size=config.test_chunk_size)
 
     expected_keys = []

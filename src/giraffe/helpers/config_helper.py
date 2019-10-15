@@ -43,4 +43,5 @@ class ConfigHelper:
         self.number_of_test_nodes = int(self.config['TESTING']['number_of_test_nodes'])
         self.number_of_test_edges = int(self.config['TESTING']['number_of_test_edges'])
         self.test_chunk_size = int(self.config['TESTING']['test_chunk_size'])
-        self.test_request_id = self.config['TESTING']['test_request_id']
+        self.test_request_id_for_nodes = self.config['TESTING']['test_request_id_for_nodes']
+        self.test_request_id_for_edges = self.config['TESTING']['test_request_id_for_edges']
