@@ -1,4 +1,5 @@
 import math
+import itertools
 from logging import Logger
 
 import pytest
@@ -56,6 +57,23 @@ def test_redis_db_connection():
     global log, redis_db, redis_driver
     r: Redis = redis_driver
     assert r.ping()
+
+
+def test_order_jobs():
+    global log, redis_db, redis_driver
+    db: RedisDB = redis_db
+    correct_order = ['MyJob<1_nodes>:Batch[1]',
+                     'MyJob<1_nodes>:Batch[2]',
+                     'MyJob<1_nodes>:Batch[3]',
+                     'MyJob<2_edges>:Batch[1]',
+                     'MyJob<2_edges>:Batch[2]',
+                     ]
+
+    # After shuffling we expect the sort to bring the list to its original (correct) order
+
+    for shuffled_list in list(itertools.permutations(correct_order, len(correct_order))):
+        ordered_jobs = sorted(shuffled_list, key=db.order_jobs, reverse=False)
+        assert ordered_jobs == correct_order
 
 
 def test_populate_sorted_set():

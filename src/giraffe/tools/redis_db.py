@@ -1,8 +1,10 @@
+import re
 import redis
 import atexit
 
 from typing import List
 
+from giraffe.exceptions.logical import MissingJobError
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from redis import Redis
@@ -13,6 +15,7 @@ class RedisDB(object):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.log.debug(f'Initialising redis driver.')
         self._driver: Redis = redis.Redis(host=config.redis_host_address, port=config.redis_port)
+        self.job_regex = re.compile(config.job_regex)
         atexit.register(self._driver.close)
 
     def __enter__(self):
@@ -31,3 +34,16 @@ class RedisDB(object):
     def populate_sorted_set(self, key: str, score: int, values: List):
         r: Redis = self._driver
         r.zadd(key, {str(value): score for value in values})
+
+    def order_jobs(self, element):
+        # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
+        match = self.job_regex.match(element)
+        # noinspection PyRedundantParentheses
+        return (match.group(2), int(match.group(3)))
+
+    def pull_job_batches(self, job_name: str):
+        r: Redis = self._driver
+        all_keys: List[str] = r.keys()
+        job_keys = list(filter(lambda key: key.startswith(job_name) + '<', all_keys))  # After `<` comes `nodes`/`edges`
+        if len(job_keys) == 0:
+            raise MissingJobError(f'No job with the name of {job_name} found.')

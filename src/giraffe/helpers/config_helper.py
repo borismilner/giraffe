@@ -45,3 +45,7 @@ class ConfigHelper:
         self.test_chunk_size = int(self.config['TESTING']['test_chunk_size'])
         self.test_request_id_for_nodes = self.config['TESTING']['test_request_id_for_nodes']
         self.test_request_id_for_edges = self.config['TESTING']['test_request_id_for_edges']
+
+        # Giraffe logic
+
+        self.job_regex = self.config['GIRAFFE']['job_regex']
