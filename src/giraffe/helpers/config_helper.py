@@ -22,9 +22,15 @@ class ConfigHelper:
 
         # Reading Neo4j connection details from configuration-file
 
-        self.host_address = self.config['NEO4J']['HOST']
-        self.username = self.config['NEO4J']['USERNAME']
-        self.password = self.config['NEO4J']['PASSWORD']
-        self.bolt_port = self.config['NEO4J']['BOLT_PORT']
+        self.neo_host_address = self.config['NEO4J']['HOST']
+        self.neo_username = self.config['NEO4J']['USERNAME']
+        self.neo_password = self.config['NEO4J']['PASSWORD']
+        self.neo_bolt_port = self.config['NEO4J']['BOLT_PORT']
 
-        self.bolt_uri = f'bolt://{self.host_address}:{self.bolt_port}'
+        self.neo_bolt_uri = f'bolt://{self.neo_host_address}:{self.neo_bolt_port}'
+
+        # Reading REDIS connection details from configuration-file
+        self.redis_host_address = self.config['REDIS']['HOST']
+        self.redis_username = self.config['REDIS']['USERNAME']
+        self.redis_password = self.config['REDIS']['PASSWORD']
+        self.redis_port = self.config['REDIS']['PORT']

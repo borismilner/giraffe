@@ -19,20 +19,20 @@ class NeoDB(object):
         # Connecting py2neo
 
         self.graph = Graph(
-            uri=config.host_address,
-            user=config.username,
-            password=config.password
+            uri=config.neo_host_address,
+            user=config.neo_username,
+            password=config.neo_password
         )
 
         # Connecting official bolt-driver
 
-        self._driver = GraphDatabase.driver(uri=config.bolt_uri,
-                                            auth=(config.username, config.password))
+        self._driver = GraphDatabase.driver(uri=config.neo_bolt_uri,
+                                            auth=(config.neo_username, config.neo_password))
 
         try:
             db_kernel_start = self.graph.database.kernel_start_time
         except ServiceUnavailable as _:
-            raise TechnicalError(f'Neo4j does not seem to be active at {config.host_address}')
+            raise TechnicalError(f'Neo4j does not seem to be active at {config.neo_host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
 
         atexit.register(self.__exit__)
