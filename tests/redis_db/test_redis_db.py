@@ -63,8 +63,14 @@ def test_populate_sorted_set():
     r: Redis = redis_driver
     request_id = config.test_request_id
     bathes = list_as_chunks(the_list=test_nodes, chunk_size=config.test_chunk_size)
+
+    expected_keys = []
+
     for i, batch in enumerate(bathes):
-        db.populate_sorted_set(key=f'{request_id}:Batch_{i}', score=0, values=batch)
+        key = f'{request_id}:Batch_{i}'
+        expected_keys.append(key)
+        db.populate_sorted_set(key=key, score=0, values=batch)
 
     db_keys = r.keys()
     assert len(db_keys) == math.ceil(config.number_of_test_nodes / config.test_chunk_size)
+    assert set(expected_keys) == set(key.decode('utf8') for key in db_keys)
