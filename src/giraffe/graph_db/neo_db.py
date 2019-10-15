@@ -35,7 +35,7 @@ class NeoDB(object):
             raise TechnicalError(f'Neo4j does not seem to be active at {config.neo_host_address}')
         self.log.debug(f'Neo4j is active since {db_kernel_start}.')
 
-        atexit.register(self.__exit__)
+        atexit.register(self._driver.close)
 
     def __enter__(self):
         return self
