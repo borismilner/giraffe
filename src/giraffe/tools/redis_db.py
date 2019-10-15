@@ -31,9 +31,9 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self._driver.flushall()
 
-    def populate_sorted_set(self, key: str, score: int, values: List):
+    def populate_list(self, key: str, values: List):
         r: Redis = self._driver
-        r.zadd(key, {str(value): score for value in values})
+        r.lpush(key, *[str(value) for value in values])
 
     def order_jobs(self, element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
@@ -48,3 +48,6 @@ class RedisDB(object):
         job_keys = list(filter(lambda key: key.startswith(job_name) + '<', all_keys))  # After `<` comes `nodes`/`edges`
         if len(job_keys) == 0:
             raise MissingJobError(f'No job with the name of {job_name} found.')
+
+        ordered_jobs = sorted(job_keys, key=self.order_jobs, reverse=False)
+        self.log.info(f'Discovered {len(ordered_jobs)} batches.')
