@@ -63,11 +63,11 @@ def test_order_jobs():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
     correct_order = [
-        'MyJob<1_nodes>:Batch[1]',
-        'MyJob<1_nodes>:Batch[2]',
-        'MyJob<1_nodes>:Batch[3]',
-        'MyJob<2_edges>:Batch[1]',
-        'MyJob<2_edges>:Batch[2]',
+        'MyJob<nodes>:Batch[1]',
+        'MyJob<nodes>:Batch[2]',
+        'MyJob<nodes>:Batch[3]',
+        'MyJob<edges>:Batch[1]',
+        'MyJob<edges>:Batch[2]',
     ]
 
     # After shuffling we expect the sort to bring the list to its original (correct) order

@@ -38,8 +38,9 @@ class RedisDB(object):
     def order_jobs(self, element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
         match = self.job_regex.match(element)
+        entity_type = match.group(2)
         # noinspection PyRedundantParentheses
-        return (match.group(2), int(match.group(3)))
+        return ('a' if entity_type == 'nodes' else 'z', int(match.group(3)))
 
     def pull_job_batches(self, job_name: str):
         r: Redis = self._driver
