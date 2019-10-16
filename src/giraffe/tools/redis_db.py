@@ -1,8 +1,7 @@
-import re
 import redis
 import atexit
 
-from typing import List, Tuple, Iterable, Iterator
+from typing import List, Iterable, Iterator
 
 from giraffe.exceptions.logical import MissingKeyError
 from giraffe.helpers import log_helper
@@ -15,7 +14,6 @@ class RedisDB(object):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.log.debug(f'Initialising redis driver.')
         self.driver: Redis = redis.Redis(host=config.redis_host_address, port=config.redis_port)
-        self.job_regex = re.compile(config.job_regex)
         atexit.register(self.driver.close)
 
     def __enter__(self):
@@ -31,23 +29,22 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self.driver.flushall()
 
-    def order_jobs(self, element):
-        # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
-        match = self.job_regex.match(element)
-        entity_type = match.group(2)
-        # noinspection PyRedundantParentheses
-        return ('a' if entity_type == 'nodes' else 'z', int(match.group(3)))
-
     def delete_keys(self, keys: Iterable):
         r: Redis = self.driver
         r.delete(*keys)
 
-    def pull_in_batches(self, key: str, batch_size: int) -> Iterator:
+    def pull_in_batches(self, key_pattern: str, batch_size: int) -> Iterator:
         # Shall pull batches of around batch_size from the server and serve them locally through an iterator
         r: Redis = self.driver
-        found_keys: List[str] = r.keys(pattern=key)
+        found_keys: List[str] = self.get_key_by_pattern(key_pattern=key_pattern)
         if len(found_keys) != 1:
-            raise MissingKeyError(f'No key found with the name of: {key} (found {len(found_keys)} keys.')
+            raise MissingKeyError(f'No key found with the name of: {key_pattern} (found {len(found_keys)} keys.')
+        key = found_keys[0]
 
-        batch_iterator = r.sscan_iter(key, match=None, count=batch_size)
+        batch_iterator = r.sscan_iter(name=f'{key}', count=batch_size)
         return batch_iterator
+
+    def get_key_by_pattern(self, key_pattern: str):
+        r: Redis = self.driver
+        found_keys: List[str] = [key.decode('utf8') for key in r.keys(pattern=key_pattern)]
+        return found_keys

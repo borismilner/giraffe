@@ -70,6 +70,7 @@ class NeoDB(object):
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
 
+        nodes = nodes
         self.create_index_if_not_exists(label=label, property_name='_uid')
         if label is None:
             label = nodes[0]['_label']

@@ -1,3 +1,4 @@
+nox
 neobolt
 giraffe
 neo4j

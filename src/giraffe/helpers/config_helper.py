@@ -58,13 +58,13 @@ class ConfigHelper:
             self.number_of_test_edges = int(self.config[testing_section]['number_of_test_edges'])
             self.test_chunk_size = int(self.config[testing_section]['test_chunk_size'])
             self.test_job_name = self.config[testing_section]['test_request_name']
-            self.nodes_ingestion_operation = self.config[testing_section]['nodes_ingestion_operation']
-            self.edges_ingestion_operation = self.config[testing_section]['edges_ingestion_operation']
+
         else:
             self.log.warning(f'No configuration found for section {testing_section}')
 
         if self.config.has_section(section=giraffe_section):
             # Giraffe logic
-            self.job_regex = self.config[giraffe_section]['job_regex']
+            self.nodes_ingestion_operation = self.config[giraffe_section]['nodes_ingestion_operation']
+            self.edges_ingestion_operation = self.config[giraffe_section]['edges_ingestion_operation']
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')
