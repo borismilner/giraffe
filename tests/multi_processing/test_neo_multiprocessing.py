@@ -8,7 +8,7 @@ from giraffe.helpers.neo_multiprocessing import MultiProcHelper
 
 import multiprocessing as mp
 
-sleep_time_simulation_sec = 0.25
+sleep_time_simulation_sec = 0.15
 
 
 def processing_function(batch: List, time_to_sleep: float = sleep_time_simulation_sec):

@@ -77,24 +77,24 @@ def test_order_jobs():
         assert ordered_jobs == correct_order
 
 
-def test_populate_list():
+def test_populate_ordered_set():
     global log, redis_db, redis_driver
     delete_test_data()
     db: RedisDB = redis_db
     r: Redis = redis_driver
     request_id = config.test_request_id_for_nodes
-    bathes = list_as_chunks(the_list=test_nodes, chunk_size=config.test_chunk_size)
 
     expected_keys = []
 
-    for i, batch in enumerate(bathes):
-        key = f'{request_id}:Batch[{i}]'
+    how_many_streams = 100
+    for i in range(0, how_many_streams):
+        key = f'{request_id}[{i}]'
         expected_keys.append(key)
-        db.populate_ordered_set(key=key, score=0, values=batch)
+        db.populate_ordered_set(key=key, score=0, values=test_nodes)
 
     db_keys = r.keys()
-    assert len(db_keys) == math.ceil(config.number_of_test_nodes / config.test_chunk_size)
+    assert len(db_keys) == how_many_streams
     assert set(expected_keys) == set(key.decode('utf8') for key in db_keys)
     for key in db_keys:
-        batch_size = r.zcard(key)
-        assert batch_size == config.test_chunk_size or batch_size == config.number_of_test_nodes % config.test_chunk_size
+        size = r.zcard(key)
+        assert size == len(test_nodes)
