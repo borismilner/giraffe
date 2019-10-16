@@ -39,7 +39,7 @@ def init_test_data():
     # Populate nodes
     db.populate_job(job_name=config.test_job_name,
                     operation_required='nodes_ingest',
-                    operation_arguments='officer, gentleman',
+                    operation_arguments=','.join(config.test_labels),
                     items=[str(value) for value in test_nodes])
 
     # Populate edges
@@ -102,7 +102,7 @@ def test_populate_job():
     # Populate nodes
     db.populate_job(job_name=config.test_job_name,
                     operation_required='nodes_ingest',
-                    operation_arguments='officer, gentleman',
+                    operation_arguments=','.join(config.test_labels),
                     items=[str(value) for value in test_nodes])
 
     # Populate edges
@@ -130,6 +130,6 @@ def test_populate_job():
 def test_pull_in_batches():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
-    nodes_iterator = db.pull_in_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=500)
+    nodes_iterator = db.pull_in_batches(key=f'{config.test_job_name}:{config.nodes_ingestion_operation}:{config.test_labels[0]},{config.test_labels[1]}', batch_size=500)
     nodes = [node.decode('utf8') for node in nodes_iterator]
     assert len(nodes) == len(test_nodes)
