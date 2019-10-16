@@ -86,7 +86,6 @@ def test_order_jobs():
 
 def test_populate_hashes():
     global log, redis_db, redis_driver
-    db: RedisDB = redis_db
     r: Redis = redis_driver
     delete_test_data()
 
@@ -96,10 +95,20 @@ def test_populate_hashes():
 
     assert len(keys) == len(test_nodes) + len(test_edges)
     assert len(set(keys)) == len(keys)
-
     for _ in range(0, random.randint(0, 100)):
         random_member_index = random.randint(0, min(len(test_nodes), len(test_edges)) - 1)
         hash_values = set(key.decode('utf8') for key in r.hgetall(keys[random_member_index]))
         original_node_keys = set(test_nodes[random_member_index].keys())
         original_edge_keys = set(test_edges[random_member_index].keys())
         assert hash_values == original_node_keys or hash_values == original_edge_keys
+
+
+def test_delete_keys():
+    global log, redis_db, redis_driver
+    db: RedisDB = redis_db
+    r: Redis = redis_driver
+    db.populate_hashes(members=[(f'test_key{i}', {'test_value': i}) for i in range(0, 1000)])
+    keys_to_delete = [key.decode('utf8') for key in r.keys(pattern='test_key*')]
+    db.delete_keys(keys=keys_to_delete)
+    after_deletion = (key.decode('utf8') for key in r.keys(pattern='test_key*'))
+    assert any(after_deletion) is False

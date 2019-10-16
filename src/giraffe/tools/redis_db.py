@@ -2,7 +2,7 @@ import re
 import redis
 import atexit
 
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
 
 from giraffe.exceptions.logical import MissingJobError
 from giraffe.helpers import log_helper
@@ -53,3 +53,7 @@ class RedisDB(object):
 
         ordered_jobs = sorted(job_keys, key=self.order_jobs, reverse=False)
         self.log.info(f'Discovered {len(ordered_jobs)} batches.')
+
+    def delete_keys(self, keys: Iterable):
+        r: Redis = self._driver
+        r.delete(*keys)
