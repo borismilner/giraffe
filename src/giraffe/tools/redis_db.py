@@ -31,9 +31,9 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self._driver.flushall()
 
-    def populate_list(self, key: str, values: List):
+    def populate_set(self, key: str, score: int, values: List):
         r: Redis = self._driver
-        r.lpush(key, *[str(value) for value in values])
+        r.zadd(key, {str(value): score for value in values})
 
     def order_jobs(self, element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
