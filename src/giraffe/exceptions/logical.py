@@ -2,5 +2,5 @@ class QuerySyntaxError(Exception):
     pass
 
 
-class MissingJobError(Exception):
+class MissingKeyError(Exception):
     pass
