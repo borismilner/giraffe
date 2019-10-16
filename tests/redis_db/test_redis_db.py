@@ -1,4 +1,3 @@
-import random
 import itertools
 from logging import Logger
 
@@ -82,31 +81,13 @@ def test_order_jobs():
         assert ordered_jobs == correct_order
 
 
-def test_populate_hashes():
-    global log, redis_db, redis_driver
-    r: Redis = redis_driver
-    delete_test_data()
-
-    init_test_data()
-
-    keys = r.keys()
-
-    assert len(keys) == len(test_nodes) + len(test_edges)
-    assert len(set(keys)) == len(keys)
-    for _ in range(0, random.randint(0, 100)):
-        random_member_index = random.randint(0, min(len(test_nodes), len(test_edges)) - 1)
-        hash_values = set(key.decode('utf8') for key in r.hgetall(keys[random_member_index]))
-        original_node_keys = set(test_nodes[random_member_index].keys())
-        original_edge_keys = set(test_edges[random_member_index].keys())
-        assert hash_values == original_node_keys or hash_values == original_edge_keys
-
-
 def test_delete_keys():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
     r: Redis = redis_driver
-    db.populate_hashes(members=[(f'test_key{i}', {'test_value': i}) for i in range(0, 1000)])
-    keys_to_delete = [key.decode('utf8') for key in r.keys(pattern='test_key*')]
+    delete_test_data()
+    init_test_data()
+    keys_to_delete = [key.decode('utf8') for key in r.keys(pattern=f'{config.test_job_name}*')]
     db.delete_keys(keys=keys_to_delete)
     after_deletion = (key.decode('utf8') for key in r.keys(pattern='test_key*'))
     assert any(after_deletion) is False
@@ -127,16 +108,15 @@ def test_populate_job():
     # Populate edges
     db.populate_job(job_name=config.test_job_name,
                     operation_required='edges_ingest',
-                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
+                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[1]}',
                     items=[str(value) for value in test_edges])
 
     keys = r.keys(pattern=f'{config.test_job_name}*')
     assert len(keys) == 2
-    node_keys = r.keys(pattern=f'{config.test_job_name}.nodes_ingest.*')
+    node_keys = r.keys(pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}:*')
     assert len(node_keys) == 1
-    edges_keys = r.keys(pattern=f'{config.test_job_name}.edges_ingest.*')
+    edges_keys = r.keys(pattern=f'{config.test_job_name}:{config.edges_ingestion_operation}:*')
     assert len(edges_keys) == 1
-    assert keys[0].decode('utf8') == f'{config.test_job_name}.nodes_ingest.[officer, gentleman]'
 
     nodes_key = node_keys[0].decode('utf8')
     edges_key = edges_keys[0].decode('utf8')

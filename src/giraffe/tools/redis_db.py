@@ -31,11 +31,6 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self._driver.flushall()
 
-    def populate_hashes(self, members: List[Tuple[str, dict]]):
-        r: Redis = self._driver
-        for key_to_mapping in members:
-            r.hmset(name=key_to_mapping[0], mapping=key_to_mapping[1])
-
     def populate_job(self, job_name: str, operation_required: str, operation_arguments: str, items: List):
         r: Redis = self._driver
         result = r.sadd(f'{job_name}:{operation_required}:{operation_arguments}', *items)
