@@ -42,7 +42,7 @@ def init_test_data():
                                        (config.test_request_id_for_edges, test_edges)):
         bathes = list_as_chunks(the_list=graph_entities, chunk_size=config.test_chunk_size)
         for i, batch in enumerate(bathes):
-            db.populate_set(key=f'{request_id}:Batch[{i}]', score=0, values=batch)
+            db.populate_ordered_set(key=f'{request_id}:Batch[{i}]', score=0, values=batch)
 
 
 @pytest.fixture(autouse=True)
@@ -90,7 +90,7 @@ def test_populate_list():
     for i, batch in enumerate(bathes):
         key = f'{request_id}:Batch[{i}]'
         expected_keys.append(key)
-        db.populate_set(key=key, score=0, values=batch)
+        db.populate_ordered_set(key=key, score=0, values=batch)
 
     db_keys = r.keys()
     assert len(db_keys) == math.ceil(config.number_of_test_nodes / config.test_chunk_size)

@@ -31,7 +31,7 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self._driver.flushall()
 
-    def populate_set(self, key: str, score: int, values: List):
+    def populate_ordered_set(self, key: str, score: int, values: List):
         r: Redis = self._driver
         r.zadd(key, {str(value): score for value in values})
 
