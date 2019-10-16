@@ -52,13 +52,8 @@ class RedisDB(object):
         r: Redis = self._driver
         r.delete(*keys)
 
-    # TODO: COMPLETE THIS ONE
-    def pull_job_in_batches(self, job_name: str, batch_size: int):
+    def pull_batches(self, key: str, batch_size: int):
         r: Redis = self._driver
-        all_keys: List[str] = r.keys()
-        job_keys = list(filter(lambda key: key.startswith(job_name) + '<', all_keys))  # After `<` comes `nodes`/`edges`
-        if len(job_keys) == 0:
-            raise MissingJobError(f'No job with the name of {job_name} found.')
-
-        ordered_jobs = sorted(job_keys, key=self.order_jobs, reverse=False)
-        self.log.info(f'Discovered {len(ordered_jobs)} batches.')
+        found_keys: List[str] = r.keys(pattern=key)
+        if len(found_keys) != 1:
+            raise MissingJobError(f'No key found with the name of: {key} (found {len(found_keys)} keys.')
