@@ -4,7 +4,6 @@ config = ConfigHelper()
 
 test_nodes = [
     {
-        '_meta': 'OperationBoom.[ingest_node].[officer, gentleman]',
         '_uid': i,
         'name': f'person{i}',
         'age': i,

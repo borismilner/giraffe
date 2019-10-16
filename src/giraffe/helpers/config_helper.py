@@ -43,7 +43,7 @@ class ConfigHelper:
         self.number_of_test_nodes = int(self.config['TESTING']['number_of_test_nodes'])
         self.number_of_test_edges = int(self.config['TESTING']['number_of_test_edges'])
         self.test_chunk_size = int(self.config['TESTING']['test_chunk_size'])
-        self.test_request_name = self.config['TESTING']['test_request_name']
+        self.test_job_name = self.config['TESTING']['test_request_name']
 
         # Giraffe logic
 

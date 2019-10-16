@@ -36,6 +36,11 @@ class RedisDB(object):
         for key_to_mapping in members:
             r.hmset(name=key_to_mapping[0], mapping=key_to_mapping[1])
 
+    def populate_job(self, job_name: str, operation_required: str, operation_arguments: str, items: List):
+        r: Redis = self._driver
+        result = r.sadd(f'{job_name}.{operation_required}.[{operation_arguments}]', *items)
+        assert result == len(items)  # TODO: Handle cases when it's not
+
     def order_jobs(self, element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
         match = self.job_regex.match(element)
@@ -43,8 +48,12 @@ class RedisDB(object):
         # noinspection PyRedundantParentheses
         return ('a' if entity_type == 'nodes' else 'z', int(match.group(3)))
 
+    def delete_keys(self, keys: Iterable):
+        r: Redis = self._driver
+        r.delete(*keys)
+
     # TODO: COMPLETE THIS ONE
-    def pull_job_batches(self, job_name: str):
+    def pull_job_in_batches(self, job_name: str, batch_size: int):
         r: Redis = self._driver
         all_keys: List[str] = r.keys()
         job_keys = list(filter(lambda key: key.startswith(job_name) + '<', all_keys))  # After `<` comes `nodes`/`edges`
@@ -53,7 +62,3 @@ class RedisDB(object):
 
         ordered_jobs = sorted(job_keys, key=self.order_jobs, reverse=False)
         self.log.info(f'Discovered {len(ordered_jobs)} batches.')
-
-    def delete_keys(self, keys: Iterable):
-        r: Redis = self._driver
-        r.delete(*keys)

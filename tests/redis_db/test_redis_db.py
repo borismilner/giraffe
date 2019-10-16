@@ -40,14 +40,14 @@ def init_test_data():
     # Populate nodes
 
     db.populate_hashes(members=[
-        (f'{config.test_request_name}{i}.[add_node].[{",".join(config.test_labels)}]', node)
+        (f'{config.test_job_name}{i}.[add_node].[{",".join(config.test_labels)}]', node)
         for i, node in enumerate(test_nodes)
     ])
 
     # Populate edges
 
     db.populate_hashes(members=[
-        (f'{config.test_request_name}{i}.[add_edge].[{config.test_edge_type},{config.test_labels[0]},{config.test_labels[1]}]', node)
+        (f'{config.test_job_name}{i}.[add_edge].[{config.test_edge_type},{config.test_labels[0]},{config.test_labels[1]}]', node)
         for i, node in enumerate(test_edges)
     ])
 
@@ -112,3 +112,38 @@ def test_delete_keys():
     db.delete_keys(keys=keys_to_delete)
     after_deletion = (key.decode('utf8') for key in r.keys(pattern='test_key*'))
     assert any(after_deletion) is False
+
+
+def test_populate_job():
+    global log, redis_db, redis_driver
+    db: RedisDB = redis_db
+    r: Redis = redis_driver
+    delete_test_data()
+
+    # Populate nodes
+    db.populate_job(job_name=config.test_job_name,
+                    operation_required='nodes_ingest',
+                    operation_arguments='officer, gentleman',
+                    items=[str(value) for value in test_nodes])
+
+    # Populate edges
+    db.populate_job(job_name=config.test_job_name,
+                    operation_required='edges_ingest',
+                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
+                    items=[str(value) for value in test_edges])
+
+    keys = r.keys(pattern=f'{config.test_job_name}*')
+    assert len(keys) == 2
+    node_keys = r.keys(pattern=f'{config.test_job_name}.nodes_ingest.*')
+    assert len(node_keys) == 1
+    edges_keys = r.keys(pattern=f'{config.test_job_name}.edges_ingest.*')
+    assert len(edges_keys) == 1
+    assert keys[0].decode('utf8') == f'{config.test_job_name}.nodes_ingest.[officer, gentleman]'
+
+    nodes_key = node_keys[0].decode('utf8')
+    edges_key = edges_keys[0].decode('utf8')
+
+    num_stored_nodes = r.scard(name=nodes_key)
+    assert num_stored_nodes == len(test_nodes)
+    num_stored_edges = r.scard(name=edges_key)
+    assert num_stored_edges == len(test_edges)
