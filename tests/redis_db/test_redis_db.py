@@ -147,9 +147,9 @@ def test_populate_job():
     assert num_stored_edges == len(test_edges)
 
 
-def test_pull_batches():
+def test_pull_in_batches():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
-    nodes_iterator = db.pull_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=500)
+    nodes_iterator = db.pull_in_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=500)
     nodes = [node.decode('utf8') for node in nodes_iterator]
     assert len(nodes) == len(test_nodes)

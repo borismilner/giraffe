@@ -52,7 +52,7 @@ class RedisDB(object):
         r: Redis = self._driver
         r.delete(*keys)
 
-    def pull_batches(self, key: str, batch_size: int) -> Iterator:
+    def pull_in_batches(self, key: str, batch_size: int) -> Iterator:
         # Shall pull batches of around batch_size from the server and serve them locally through an iterator
         r: Redis = self._driver
         found_keys: List[str] = r.keys(pattern=key)
