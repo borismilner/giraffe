@@ -2,7 +2,7 @@ import re
 import redis
 import atexit
 
-from typing import List
+from typing import List, Tuple
 
 from giraffe.exceptions.logical import MissingJobError
 from giraffe.helpers import log_helper
@@ -34,6 +34,11 @@ class RedisDB(object):
     def populate_ordered_set(self, key: str, score: int, values: List):
         r: Redis = self._driver
         r.zadd(key, {str(value): score for value in values})
+
+    def populate_hashes(self, members: List[Tuple[str, dict]]):
+        r: Redis = self._driver
+        for key_to_mapping in members:
+            r.hmset(name=key_to_mapping[0], mapping=key_to_mapping[1])
 
     def order_jobs(self, element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.

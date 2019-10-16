@@ -4,9 +4,11 @@ config = ConfigHelper()
 
 test_nodes = [
     {
+        '_meta': 'OperationBoom.[ingest_node].[officer, gentleman]',
         '_uid': i,
-        '_label': config.test_label,
-        'age': i ** 2
+        'name': f'person{i}',
+        'age': i,
+        'email': f'person{i}@gmail.com'
     }
     for i in range(0, config.number_of_test_nodes)
 ]

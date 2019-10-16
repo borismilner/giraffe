@@ -1,4 +1,4 @@
-import math
+import random
 import itertools
 from logging import Logger
 
@@ -48,9 +48,9 @@ def init_test_data():
 @pytest.fixture(autouse=True)
 def run_around_tests():
     global log, redis_db, redis_driver
-    delete_test_data()
-    yield
     init_test_data()
+    yield
+    delete_test_data()
 
 
 def test_redis_db_connection():
@@ -98,3 +98,24 @@ def test_populate_ordered_set():
     for key in db_keys:
         size = r.zcard(key)
         assert size == len(test_nodes)
+
+
+def test_populate_hashes():
+    global log, redis_db, redis_driver
+    db: RedisDB = redis_db
+    r: Redis = redis_driver
+    delete_test_data()
+
+    nodes_to_populate = [
+        (f'GloballyUID{i}', node)
+        for i, node in enumerate(test_nodes)
+    ]
+    db.populate_hashes(members=nodes_to_populate)
+    keys = r.keys()
+    assert len(keys) == len(nodes_to_populate)
+    assert len(set(keys)) == len(keys)
+    for _ in range(0, random.randint(0, len(test_nodes) - 1)):
+        random_member_index = random.randint(0, len(test_nodes) - 1)
+        hash_values = set(key.decode('utf8') for key in r.hgetall(keys[random_member_index]))
+        original_keys = set(test_nodes[random_member_index].keys())
+        assert hash_values == original_keys
