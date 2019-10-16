@@ -15,9 +15,7 @@ test_nodes = [
 
 test_edges = [
     {
-        '_fromLabel': config.test_label,
         '_fromUid': i,
-        '_toLabel': config.test_label,
         '_toUid': i * 2,
         '_edgeType': config.test_edge_type
     }

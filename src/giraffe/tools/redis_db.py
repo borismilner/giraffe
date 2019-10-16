@@ -31,10 +31,6 @@ class RedisDB(object):
         self.log.debug('Purging redis!')
         self._driver.flushall()
 
-    def populate_ordered_set(self, key: str, score: int, values: List):
-        r: Redis = self._driver
-        r.zadd(key, {str(value): score for value in values})
-
     def populate_hashes(self, members: List[Tuple[str, dict]]):
         r: Redis = self._driver
         for key_to_mapping in members:

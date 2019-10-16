@@ -4,7 +4,6 @@ from logging import Logger
 
 import pytest
 from giraffe.configuration.common_testing_artifactrs import *
-from giraffe.helpers.utilities import list_as_chunks
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.tools.redis_db import RedisDB
@@ -38,11 +37,19 @@ def init_test_data():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
 
-    for request_id, graph_entities in ((config.test_request_id_for_nodes, test_nodes),
-                                       (config.test_request_id_for_edges, test_edges)):
-        bathes = list_as_chunks(the_list=graph_entities, chunk_size=config.test_chunk_size)
-        for i, batch in enumerate(bathes):
-            db.populate_ordered_set(key=f'{request_id}:Batch[{i}]', score=0, values=batch)
+    # Populate nodes
+
+    db.populate_hashes(members=[
+        (f'{config.test_request_name}{i}.[add_node].[{",".join(config.test_labels)}]', node)
+        for i, node in enumerate(test_nodes)
+    ])
+
+    # Populate edges
+
+    db.populate_hashes(members=[
+        (f'{config.test_request_name}{i}.[add_edge].[{config.test_edge_type},{config.test_labels[0]},{config.test_labels[1]}]', node)
+        for i, node in enumerate(test_edges)
+    ])
 
 
 @pytest.fixture(autouse=True)
@@ -75,29 +82,6 @@ def test_order_jobs():
     for shuffled_list in list(itertools.permutations(correct_order, len(correct_order))):
         ordered_jobs = sorted(shuffled_list, key=db.order_jobs, reverse=False)
         assert ordered_jobs == correct_order
-
-
-def test_populate_ordered_set():
-    global log, redis_db, redis_driver
-    delete_test_data()
-    db: RedisDB = redis_db
-    r: Redis = redis_driver
-    request_id = config.test_request_id_for_nodes
-
-    expected_keys = []
-
-    how_many_streams = 100
-    for i in range(0, how_many_streams):
-        key = f'{request_id}[{i}]'
-        expected_keys.append(key)
-        db.populate_ordered_set(key=key, score=0, values=test_nodes)
-
-    db_keys = r.keys()
-    assert len(db_keys) == how_many_streams
-    assert set(expected_keys) == set(key.decode('utf8') for key in db_keys)
-    for key in db_keys:
-        size = r.zcard(key)
-        assert size == len(test_nodes)
 
 
 def test_populate_hashes():
