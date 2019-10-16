@@ -38,26 +38,24 @@ def init_test_data():
     db: RedisDB = redis_db
 
     # Populate nodes
-
-    db.populate_hashes(members=[
-        (f'{config.test_job_name}{i}.[add_node].[{",".join(config.test_labels)}]', node)
-        for i, node in enumerate(test_nodes)
-    ])
+    db.populate_job(job_name=config.test_job_name,
+                    operation_required='nodes_ingest',
+                    operation_arguments='officer, gentleman',
+                    items=[str(value) for value in test_nodes])
 
     # Populate edges
-
-    db.populate_hashes(members=[
-        (f'{config.test_job_name}{i}.[add_edge].[{config.test_edge_type},{config.test_labels[0]},{config.test_labels[1]}]', node)
-        for i, node in enumerate(test_edges)
-    ])
+    db.populate_job(job_name=config.test_job_name,
+                    operation_required='edges_ingest',
+                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
+                    items=[str(value) for value in test_edges])
 
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
     global log, redis_db, redis_driver
+    delete_test_data()
     init_test_data()
     yield
-    delete_test_data()
 
 
 def test_redis_db_connection():
@@ -147,3 +145,10 @@ def test_populate_job():
     assert num_stored_nodes == len(test_nodes)
     num_stored_edges = r.scard(name=edges_key)
     assert num_stored_edges == len(test_edges)
+
+
+def test_pull_batches():
+    global log, redis_db, redis_driver
+    db: RedisDB = redis_db
+    r: Redis = redis_driver
+    db.pull_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=50)

@@ -2,7 +2,7 @@ import re
 import redis
 import atexit
 
-from typing import List, Tuple, Iterable
+from typing import List, Tuple, Iterable, Iterator
 
 from giraffe.exceptions.logical import MissingJobError
 from giraffe.helpers import log_helper
@@ -38,7 +38,7 @@ class RedisDB(object):
 
     def populate_job(self, job_name: str, operation_required: str, operation_arguments: str, items: List):
         r: Redis = self._driver
-        result = r.sadd(f'{job_name}.{operation_required}.[{operation_arguments}]', *items)
+        result = r.sadd(f'{job_name}:{operation_required}:{operation_arguments}', *items)
         assert result == len(items)  # TODO: Handle cases when it's not
 
     def order_jobs(self, element):
@@ -52,8 +52,12 @@ class RedisDB(object):
         r: Redis = self._driver
         r.delete(*keys)
 
-    def pull_batches(self, key: str, batch_size: int):
+    def pull_batches(self, key: str, batch_size: int) -> Iterator:
+        # Shall pull batches of around batch_size from the server and serve them locally through an iterator
         r: Redis = self._driver
         found_keys: List[str] = r.keys(pattern=key)
         if len(found_keys) != 1:
             raise MissingJobError(f'No key found with the name of: {key} (found {len(found_keys)} keys.')
+
+        batch_iterator = r.sscan_iter(key, match=None, count=batch_size)
+        return batch_iterator
