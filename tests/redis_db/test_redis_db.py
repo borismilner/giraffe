@@ -150,5 +150,6 @@ def test_populate_job():
 def test_pull_batches():
     global log, redis_db, redis_driver
     db: RedisDB = redis_db
-    r: Redis = redis_driver
-    db.pull_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=50)
+    nodes_iterator = db.pull_batches(key='Awesome:nodes_ingest:officer, gentleman', batch_size=500)
+    nodes = [node.decode('utf8') for node in nodes_iterator]
+    assert len(nodes) == len(test_nodes)
