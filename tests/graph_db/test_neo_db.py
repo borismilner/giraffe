@@ -15,16 +15,17 @@ neo: neo_db.NeoDB
 
 def delete_test_data():
     global log, neo
-    log.debug(f'Purging all nodes with label: {config.test_label}')
-    query = f'MATCH (node:{config.test_label}) DETACH DELETE node'
+    label_to_delete = config.test_labels[0]
+    log.debug(f'Purging all nodes with label: {label_to_delete}')
+    query = f'MATCH (node:{label_to_delete}) DETACH DELETE node'
     summary = neo.run_query(query=query)
-    log.debug(f'Removed {summary.counters.nodes_deleted} {config.test_label} nodes.')
+    log.debug(f'Removed {summary.counters.nodes_deleted} {label_to_delete} nodes.')
 
 
 def init_test_data():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.merge_nodes(nodes=test_nodes, label=config.test_label)
+    db.merge_nodes(nodes=test_nodes, label=config.test_labels[0])
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -61,33 +62,33 @@ def test_merge_nodes():
     global log, neo
     db: neo_db.NeoDB = neo
     delete_test_data()
-    summary = db.merge_nodes(nodes=test_nodes, label=config.test_label)
+    summary = db.merge_nodes(nodes=test_nodes, label=config.test_labels[0])
     assert summary.counters.nodes_created == len(test_nodes)
 
 
 def test_merge_edges():
     global log, neo
     db: neo_db.NeoDB = neo
-    summary = db.merge_edges(edges=test_edges, from_label=config.test_label, to_label=config.test_label)
+    summary = db.merge_edges(edges=test_edges, from_label=config.test_labels[0], to_label=config.test_labels[0])
     assert summary.counters.relationships_created == config.number_of_test_edges
 
 
 def test_create_index_if_not_exists():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
-    summary = db.create_index_if_not_exists(label=config.test_label, property_name=config.test_property)
+    db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
+    summary = db.create_index_if_not_exists(label=config.test_labels[0], property_name=config.test_property)
     assert summary.counters.indexes_added == 1
-    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
+    summary = db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
     assert summary.counters.indexes_removed == 1
 
 
 def test_drop_index_if_exists():
     global log, neo
     db: neo_db.NeoDB = neo
-    db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
-    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
+    db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
+    summary = db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
     assert summary is None
-    db.create_index_if_not_exists(label=config.test_label, property_name=config.test_property)
-    summary = db.drop_index_if_exists(label=config.test_label, property_name=config.test_property)
+    db.create_index_if_not_exists(label=config.test_labels[0], property_name=config.test_property)
+    summary = db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
     assert summary.counters.indexes_removed == 1

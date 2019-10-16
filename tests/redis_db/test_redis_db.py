@@ -90,16 +90,16 @@ def test_populate_hashes():
     r: Redis = redis_driver
     delete_test_data()
 
-    nodes_to_populate = [
-        (f'GloballyUID{i}', node)
-        for i, node in enumerate(test_nodes)
-    ]
-    db.populate_hashes(members=nodes_to_populate)
+    init_test_data()
+
     keys = r.keys()
-    assert len(keys) == len(nodes_to_populate)
+
+    assert len(keys) == len(test_nodes) + len(test_edges)
     assert len(set(keys)) == len(keys)
-    for _ in range(0, random.randint(0, len(test_nodes) - 1)):
-        random_member_index = random.randint(0, len(test_nodes) - 1)
+
+    for _ in range(0, random.randint(0, 100)):
+        random_member_index = random.randint(0, min(len(test_nodes), len(test_edges)) - 1)
         hash_values = set(key.decode('utf8') for key in r.hgetall(keys[random_member_index]))
-        original_keys = set(test_nodes[random_member_index].keys())
-        assert hash_values == original_keys
+        original_node_keys = set(test_nodes[random_member_index].keys())
+        original_edge_keys = set(test_edges[random_member_index].keys())
+        assert hash_values == original_node_keys or hash_values == original_edge_keys
