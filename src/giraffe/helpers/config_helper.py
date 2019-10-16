@@ -15,38 +15,56 @@ class ConfigHelper:
         if not os.path.isfile(configurations_ini_file_path):
             raise TechnicalError(f'{configurations_ini_file_path} does not exist.')
 
+        neo4j_section = 'NEO4J'
+        redis_section = 'REDIS'
+        testing_section = 'TESTING'
+        giraffe_section = 'GIRAFFE'
+
         config_file_path = os.path.abspath(configurations_ini_file_path)
         self.log.info(f'Configuration file: {config_file_path}')
         self.config = configparser.ConfigParser()
+
         self.config.read(configurations_ini_file_path)
+
+        self.log.debug(f'Found the following configuration sections: {self.config.sections()}')
 
         # Reading Neo4j connection details from configuration-file
 
-        self.neo_host_address = self.config['NEO4J']['HOST']
-        self.neo_username = self.config['NEO4J']['USERNAME']
-        self.neo_password = self.config['NEO4J']['PASSWORD']
-        self.neo_bolt_port = self.config['NEO4J']['BOLT_PORT']
+        if self.config.has_section(section=neo4j_section):
+            self.neo_host_address = self.config[neo4j_section]['HOST']
+            self.neo_username = self.config[neo4j_section]['USERNAME']
+            self.neo_password = self.config[neo4j_section]['PASSWORD']
+            self.neo_bolt_port = self.config[neo4j_section]['BOLT_PORT']
+        else:
+            self.log.warning(f'No configuration found for section {neo4j_section}')
 
         self.neo_bolt_uri = f'bolt://{self.neo_host_address}:{self.neo_bolt_port}'
 
-        # Reading REDIS connection details from configuration-file
-        self.redis_host_address = self.config['REDIS']['HOST']
-        self.redis_username = self.config['REDIS']['USERNAME']
-        self.redis_password = self.config['REDIS']['PASSWORD']
-        self.redis_port = self.config['REDIS']['PORT']
+        if self.config.has_section(section=redis_section):
+            # Reading REDIS connection details from configuration-file
+            self.redis_host_address = self.config[('%s' % redis_section)]['HOST']
+            self.redis_username = self.config[redis_section]['USERNAME']
+            self.redis_password = self.config[redis_section]['PASSWORD']
+            self.redis_port = self.config[redis_section]['PORT']
+        else:
+            self.log.warning(f'No configuration found for section {redis_section}')
 
-        # Unit-Testing settings
+        if self.config.has_section(section=testing_section):
+            # Unit-Testing settings
+            self.test_labels = self.config[testing_section]['test_labels'].split(',')
+            self.test_edge_type = self.config[testing_section]['test_edge_type']
+            self.test_property = self.config[testing_section]['test_property']
+            self.number_of_test_nodes = int(self.config[testing_section]['number_of_test_nodes'])
+            self.number_of_test_edges = int(self.config[testing_section]['number_of_test_edges'])
+            self.test_chunk_size = int(self.config[testing_section]['test_chunk_size'])
+            self.test_job_name = self.config[testing_section]['test_request_name']
+            self.nodes_ingestion_operation = self.config[testing_section]['nodes_ingestion_operation']
+            self.edges_ingestion_operation = self.config[testing_section]['edges_ingestion_operation']
+        else:
+            self.log.warning(f'No configuration found for section {testing_section}')
 
-        self.test_labels = self.config['TESTING']['test_labels'].split(',')
-        self.test_edge_type = self.config['TESTING']['test_edge_type']
-        self.test_property = self.config['TESTING']['test_property']
-        self.number_of_test_nodes = int(self.config['TESTING']['number_of_test_nodes'])
-        self.number_of_test_edges = int(self.config['TESTING']['number_of_test_edges'])
-        self.test_chunk_size = int(self.config['TESTING']['test_chunk_size'])
-        self.test_job_name = self.config['TESTING']['test_request_name']
-        self.nodes_ingestion_operation = self.config['TESTING']['nodes_ingestion_operation']
-        self.edges_ingestion_operation = self.config['TESTING']['edges_ingestion_operation']
-
-        # Giraffe logic
-
-        self.job_regex = self.config['GIRAFFE']['job_regex']
+        if self.config.has_section(section=giraffe_section):
+            # Giraffe logic
+            self.job_regex = self.config[giraffe_section]['job_regex']
+        else:
+            self.log.warning(f'No configuration found for section {giraffe_section}')
