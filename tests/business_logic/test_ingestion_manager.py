@@ -17,7 +17,6 @@ config = ConfigHelper()
 
 
 def test_populate_job():
-    global log, redis_db, redis_driver, ingestion_manager
     r: Redis = commons.redis_driver
     im: IngestionManager = commons.ingestion_manager
 
