@@ -14,6 +14,8 @@ from redis import Redis
 class IngestionManager:
     key_elements_type = collections.namedtuple('key_elements_type', 'job_name operation arguments')
 
+    supported_operations: List[str]
+
     def __init__(self, config_file_path: str = ConfigHelper.default_configurations_file):
         if not os.path.isfile(config_file_path):
             raise TechnicalError(f'Configuration file {config_file_path} does not exist.')
@@ -21,10 +23,7 @@ class IngestionManager:
         self.neo_db: NeoDB = NeoDB(config=self.config)
         self.redis_db: RedisDB = RedisDB(config=self.config)
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
-        self.supported_operations = (
-            self.config.nodes_ingestion_operation,
-            self.config.edges_ingestion_operation
-        )
+        IngestionManager.supported_operations = (self.config.nodes_ingestion_operation, self.config.edges_ingestion_operation)
 
     @staticmethod
     def order_jobs(element):
@@ -43,8 +42,8 @@ class IngestionManager:
         job_name = key_parts[0]
         operation = key_parts[1]
 
-        if operation not in self.supported_operations:
-            raise UnexpectedOperation(f'Operation {operation} is not supported. (supported: {self.supported_operations})')
+        if operation not in IngestionManager.supported_operations:
+            raise UnexpectedOperation(f'Operation {operation} is not supported. (supported: {IngestionManager.supported_operations})')
 
         arguments = key_parts[2].split(',')
         # noinspection PyCallByClass
