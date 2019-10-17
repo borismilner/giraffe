@@ -14,4 +14,7 @@
     - For Example:
         - AwesomeJob:nodes_ingest:MyPrimaryLabel
         - AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode
-2. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples
+
+2. **Supported Operations**: nodes_ingest, edges_ingest
+
+3. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples
