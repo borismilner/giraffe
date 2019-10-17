@@ -52,7 +52,8 @@ def test_parse_redis_key():
     job_name = config.nodes_ingestion_operation
     operation = config.nodes_ingestion_operation
     labels = config.test_labels
-    parsed: IngestionManager.key_elements_type = im.parse_redis_key(key=f'{job_name}:{operation}:{",".join(labels)}')
+    parsed: IngestionManager.key_elements_type = im.parse_redis_key(
+        key=f'{job_name}{config.key_separator}{operation}{config.key_separator}{",".join(labels)}')
     assert parsed.job_name == job_name
     assert parsed.operation == operation
     assert set(parsed.arguments) == set(labels)
