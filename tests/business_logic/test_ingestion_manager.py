@@ -6,6 +6,18 @@ from giraffe.business_logic.ingestion_manger import IngestionManager
 config = ConfigHelper()
 
 
+def test_parse_redis_key():
+    im = IngestionManager()
+    job_name = config.nodes_ingestion_operation
+    operation = config.nodes_ingestion_operation
+    labels = config.test_labels
+    parsed: IngestionManager.key_elements_type = im.parse_redis_key(
+        key=f'{job_name}{config.key_separator}{operation}{config.key_separator}{",".join(labels)}')
+    assert parsed.job_name == job_name
+    assert parsed.operation == operation
+    assert set(parsed.arguments) == set(labels)
+
+
 def test_publish_job():
     r: Redis = commons.redis_driver
     im: IngestionManager = commons.ingestion_manager
@@ -40,20 +52,8 @@ def test_publish_job():
     assert num_stored_edges == len(commons.test_edges)
 
 
-def test_pull_job_from_redis_to_neo():
+def test_process_job():
     commons.delete_redis_test_data()
     commons.init_test_data()
     im = commons.IngestionManager()
     im.process_job(job_name=config.test_job_name)
-
-
-def test_parse_redis_key():
-    im = IngestionManager()
-    job_name = config.nodes_ingestion_operation
-    operation = config.nodes_ingestion_operation
-    labels = config.test_labels
-    parsed: IngestionManager.key_elements_type = im.parse_redis_key(
-        key=f'{job_name}{config.key_separator}{operation}{config.key_separator}{",".join(labels)}')
-    assert parsed.job_name == job_name
-    assert parsed.operation == operation
-    assert set(parsed.arguments) == set(labels)
