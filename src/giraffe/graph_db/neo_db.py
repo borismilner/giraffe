@@ -14,6 +14,7 @@ from py2neo import Graph
 class NeoDB(object):
 
     def __init__(self, config: ConfigHelper = ConfigHelper()):
+        self.config = config
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
 
         # Connecting py2neo
@@ -71,12 +72,12 @@ class NeoDB(object):
         # TODO: Consider saving date-time as epoch seconds/milliseconds
 
         nodes = nodes
-        self.create_index_if_not_exists(label=label, property_name='_uid')
+        self.create_index_if_not_exists(label=label, property_name=self.config.uid_property)
         if label is None:
             label = nodes[0]['_label']
         query = f"""
         UNWIND $nodes as node
-        MERGE (p:{label}{{_uid: node._uid}})
+        MERGE (p:{label}{{{self.config.uid_property}: node.{self.config.uid_property}}})
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_seen = datetime()
         """
@@ -89,8 +90,8 @@ class NeoDB(object):
             edge_type = edges[0]['_edgeType']
         query = f"""
         UNWIND $edges as edge
-        MATCH (fromNode:{from_label}) WHERE fromNode._uid = edge._fromUid
-        MATCH (toNode:{to_label}) WHERE toNode._uid = edge._toUid
+        MATCH (fromNode:{from_label}) WHERE fromNode.{self.config.uid_property} = edge.{self.config.from_uid_property}
+        MATCH (toNode:{to_label}) WHERE toNode.{self.config.uid_property} = edge.{self.config.from_uid_property}
         MERGE (fromNode)-[r:{edge_type}]->(toNode)
         """
 
