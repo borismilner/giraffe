@@ -58,7 +58,9 @@ def test_process_job():
     commons.init_test_data()
     im = commons.IngestionManager()
     im.process_job(job_name=config.test_job_name)
-    query = f'''MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'''
-    res = commons.neo.pull_query(query=query)
-    count = next(res)[0]
+    query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'
+    count = commons.neo.pull_query(query=query).value()[0]
     assert count == config.number_of_test_nodes
+    query = f'MATCH ()-[:{commons.config.test_edge_type}]-() RETURN COUNT(*) AS count'
+    count = commons.neo.pull_query(query=query).value()[0]
+    assert count == config.number_of_test_edges
