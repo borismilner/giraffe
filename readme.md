@@ -10,9 +10,12 @@
 - [ ] Improve multi-processing
 
 ## Things to know
-1. **REDIS Key Structure**: job_name:operation:arguments
-    - For Example:
-        - AwesomeJob:nodes_ingest:MyPrimaryLabel
-        - AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode  
-1. **Supported Operations**: nodes_ingest, edges_ingest    
-1. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples  
+1. **REDIS Key Structure**
+    - job_name:operation:arguments:
+        - Example: AwesomeJob:nodes_ingest:MyPrimaryLabel
+        - Example: AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode  
+1. **Supported Operations**
+    - nodes_ingest
+    - edges_ingest    
+1. **Configuration Format**
+    https://wiki.python.org/moin/ConfigParserExamples  
