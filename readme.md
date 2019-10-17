@@ -6,10 +6,10 @@
 - [x] Redis Integration  
 - [x] Unit Testing  
   
-## Things to take care of  
+## Things To Take Care Of  
 - [ ] Improve multi-processing
 
-## Things to know
+## Things To Know
 1. **REDIS Key Structure**
     - job_name:operation:arguments:
         - Example: AwesomeJob:nodes_ingest:MyPrimaryLabel
