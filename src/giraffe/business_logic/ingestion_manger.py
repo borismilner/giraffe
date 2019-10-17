@@ -66,7 +66,7 @@ class IngestionManager:
 
     def process_job(self, job_name: str, batch_size: int = 50_000):
 
-        keys_found = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}:*')
+        keys_found = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}{self.config.key_separator}*')
         if len(keys_found) != 2:
             raise MissingKeyError(f'Could not find expected keys for job: {job_name}.')  # TODO: More informative message
 
