@@ -26,10 +26,26 @@ class IngestionManager:
         IngestionManager.supported_operations = (self.config.nodes_ingestion_operation, self.config.edges_ingestion_operation)
 
     @staticmethod
+    def validate_operation(operation_name: str):
+        if operation_name not in IngestionManager.supported_operations:
+            raise UnexpectedOperation(f'Operation {operation_name} is not supported. (supported: {IngestionManager.supported_operations})')
+
+    @staticmethod
+    def validate_job_name(job_name: str):
+        if ':' in job_name:
+            raise TechnicalError(f'Job name {job_name} must not contain colons (it is used internally...)')
+
+    @staticmethod
     def order_jobs(element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
         # noinspection PyRedundantParentheses
         return 'a' if 'nodes' in element else 'z'
+
+    def publish_job(self, job_name: str, operation: str, operation_arguments: str, items: List):
+        IngestionManager.validate_operation(operation)
+        r: Redis = self.redis_db.driver
+        result = r.sadd(f'{job_name}:{operation}:{operation_arguments}', *items)
+        assert result == len(items) or result == 0
 
     def parse_redis_key(self, key: str) -> key_elements_type:
         expected_parts_num = 3
@@ -40,21 +56,15 @@ class IngestionManager:
         if len(key_parts[0]) == 0:
             raise TechnicalError(f'Job name must not be empty ! [{key}]')
         job_name = key_parts[0]
+        IngestionManager.validate_job_name(job_name=job_name)
         operation = key_parts[1]
-
-        if operation not in IngestionManager.supported_operations:
-            raise UnexpectedOperation(f'Operation {operation} is not supported. (supported: {IngestionManager.supported_operations})')
+        IngestionManager.validate_operation(operation_name=operation)
 
         arguments = key_parts[2].split(',')
         # noinspection PyCallByClass
         return IngestionManager.key_elements_type(job_name=job_name, operation=operation, arguments=arguments)
 
-    def populate_job(self, job_name: str, operation_required: str, operation_arguments: str, items: List):
-        r: Redis = self.redis_db.driver
-        result = r.sadd(f'{job_name}:{operation_required}:{operation_arguments}', *items)
-        assert result == len(items) or result == 0
-
-    def pull_job_from_redis_to_neo(self, job_name: str, batch_size: int = 50_000):
+    def process_job(self, job_name: str, batch_size: int = 50_000):
 
         keys_found = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}:*')
         if len(keys_found) != 2:
@@ -73,12 +83,12 @@ class IngestionManager:
                 jobs.append(job.decode('utf8'))
                 awaiting_jobs += 1
                 if awaiting_jobs >= batch_size:
-                    self.push_no_neo(awaiting_jobs, is_nodes, jobs, key)
+                    self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
                     awaiting_jobs = 0
             if len(jobs) > 0:
-                self.push_no_neo(awaiting_jobs, is_nodes, jobs, key)
+                self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
 
-    def push_no_neo(self, awaiting_jobs, is_nodes, jobs, key):
+    def push_to_neo(self, awaiting_jobs, is_nodes, jobs, key):
         self.log.info(f'Placing {awaiting_jobs} {"nodes" if is_nodes else "edges"} into Neo4j')
         arguments = key.split(':')[2].split(',')
         jobs = [eval(job) for job in jobs]

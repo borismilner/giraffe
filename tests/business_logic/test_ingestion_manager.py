@@ -13,16 +13,16 @@ def test_populate_job():
     commons.delete_redis_test_data()
 
     # Populate nodes
-    im.populate_job(job_name=config.test_job_name,
-                    operation_required='nodes_ingest',
-                    operation_arguments=','.join(config.test_labels),
-                    items=[str(value) for value in commons.test_nodes])
+    im.publish_job(job_name=config.test_job_name,
+                   operation='nodes_ingest',
+                   operation_arguments=','.join(config.test_labels),
+                   items=[str(value) for value in commons.test_nodes])
 
     # Populate edges
-    im.populate_job(job_name=config.test_job_name,
-                    operation_required='edges_ingest',
-                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]}',
-                    items=[str(value) for value in commons.test_edges])
+    im.publish_job(job_name=config.test_job_name,
+                   operation='edges_ingest',
+                   operation_arguments=f'{config.test_edge_type},{config.test_labels[0]}',
+                   items=[str(value) for value in commons.test_edges])
 
     keys = r.keys(pattern=f'{config.test_job_name}*')
     assert len(keys) == 2
@@ -44,7 +44,7 @@ def test_pull_job_from_redis_to_neo():
     commons.delete_redis_test_data()
     commons.init_test_data()
     im = commons.IngestionManager()
-    im.pull_job_from_redis_to_neo(job_name=config.test_job_name)
+    im.process_job(job_name=config.test_job_name)
 
 
 def test_parse_redis_key():

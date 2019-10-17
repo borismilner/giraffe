@@ -35,16 +35,16 @@ def init_test_data():
     im: IngestionManager = ingestion_manager
 
     # Populate nodes
-    im.populate_job(job_name=config.test_job_name,
-                    operation_required='nodes_ingest',
-                    operation_arguments=','.join(config.test_labels),
-                    items=[str(value) for value in test_nodes])
+    im.publish_job(job_name=config.test_job_name,
+                   operation='nodes_ingest',
+                   operation_arguments=','.join(config.test_labels),
+                   items=[str(value) for value in test_nodes])
 
     # Populate edges
-    im.populate_job(job_name=config.test_job_name,
-                    operation_required='edges_ingest',
-                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
-                    items=[str(value) for value in test_edges])
+    im.publish_job(job_name=config.test_job_name,
+                   operation='edges_ingest',
+                   operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
+                   items=[str(value) for value in test_edges])
 
 
 test_nodes = [
