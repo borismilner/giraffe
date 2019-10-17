@@ -8,6 +8,7 @@
   
 ## Things To Take Care Of  
 - [ ] Improve multi-processing
+- [ ] Data removal/marking in redis after consumption
 
 ## Things To Know
 1. **REDIS Key/Value Structure**
