@@ -1,7 +1,8 @@
 import os
+import collections
 from typing import List
 
-from giraffe.exceptions.logical import MissingKeyError
+from giraffe.exceptions.logical import MissingKeyError, UnexpectedOperation
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.graph_db.neo_db import NeoDB
 from giraffe.helpers import log_helper
@@ -11,6 +12,8 @@ from redis import Redis
 
 
 class IngestionManager:
+    key_elements_type = collections.namedtuple('key_elements_type', 'job_name operation arguments')
+
     def __init__(self, config_file_path: str = ConfigHelper.default_configurations_file):
         if not os.path.isfile(config_file_path):
             raise TechnicalError(f'Configuration file {config_file_path} does not exist.')
@@ -18,12 +21,34 @@ class IngestionManager:
         self.neo_db: NeoDB = NeoDB(config=self.config)
         self.redis_db: RedisDB = RedisDB(config=self.config)
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
+        self.supported_operations = (
+            self.config.nodes_ingestion_operation,
+            self.config.edges_ingestion_operation
+        )
 
     @staticmethod
     def order_jobs(element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
         # noinspection PyRedundantParentheses
         return 'a' if 'nodes' in element else 'z'
+
+    def parse_redis_key(self, key: str) -> key_elements_type:
+        expected_parts_num = 3
+        key_parts = key.split(self.config.key_separator)
+        parts_count = len(key_parts)
+        if parts_count != expected_parts_num:
+            raise TechnicalError(f'Expected {expected_parts_num} parts in {key} but got {parts_count}')
+        if len(key_parts[0]) == 0:
+            raise TechnicalError(f'Job name must not be empty ! [{key}]')
+        job_name = key_parts[0]
+        operation = key_parts[1]
+
+        if operation not in self.supported_operations:
+            raise UnexpectedOperation(f'Operation {operation} is not supported. (supported: {self.supported_operations})')
+
+        arguments = key_parts[2].split(',')
+        # noinspection PyCallByClass
+        return IngestionManager.key_elements_type(job_name=job_name, operation=operation, arguments=arguments)
 
     def populate_job(self, job_name: str, operation_required: str, operation_arguments: str, items: List):
         r: Redis = self.redis_db.driver

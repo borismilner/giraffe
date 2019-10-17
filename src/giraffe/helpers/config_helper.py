@@ -66,5 +66,6 @@ class ConfigHelper:
             # Giraffe logic
             self.nodes_ingestion_operation = self.config[giraffe_section]['nodes_ingestion_operation']
             self.edges_ingestion_operation = self.config[giraffe_section]['edges_ingestion_operation']
+            self.key_separator = self.config[giraffe_section]['key_separator']
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')

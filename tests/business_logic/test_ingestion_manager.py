@@ -45,3 +45,14 @@ def test_pull_job_from_redis_to_neo():
     commons.init_test_data()
     im = commons.IngestionManager()
     im.pull_job_from_redis_to_neo(job_name=config.test_job_name)
+
+
+def test_parse_redis_key():
+    im = IngestionManager()
+    job_name = config.nodes_ingestion_operation
+    operation = config.nodes_ingestion_operation
+    labels = config.test_labels
+    parsed: IngestionManager.key_elements_type = im.parse_redis_key(key=f'{job_name}:{operation}:{",".join(labels)}')
+    assert parsed.job_name == job_name
+    assert parsed.operation == operation
+    assert set(parsed.arguments) == set(labels)

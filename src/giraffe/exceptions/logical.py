@@ -1,6 +1,13 @@
-class QuerySyntaxError(Exception):
+from giraffe.exceptions.giraffe_exception import GiraffeException
+
+
+class QuerySyntaxError(GiraffeException):
     pass
 
 
-class MissingKeyError(Exception):
+class MissingKeyError(GiraffeException):
+    pass
+
+
+class UnexpectedOperation(GiraffeException):
     pass
