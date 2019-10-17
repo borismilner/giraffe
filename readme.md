@@ -21,4 +21,4 @@
     - https://wiki.python.org/moin/ConfigParserExamples  
 ## Current Limitations
 
-1. Since UNWIND won't allow dynamic labels (as it is being compiled into the query) - all nodes in a node-ingestion-batch must have the same label.
+1. Since UNWIND won't allow dynamic labels (as it is being compiled into the query)   - all nodes in a node-ingestion-batch must have the same label.
