@@ -18,4 +18,4 @@
     - nodes_ingest
     - edges_ingest    
 1. **Configuration Format**
-    https://wiki.python.org/moin/ConfigParserExamples  
+    - https://wiki.python.org/moin/ConfigParserExamples  
