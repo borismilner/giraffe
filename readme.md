@@ -11,7 +11,7 @@
 
 ## Things To Know
 1. **REDIS Key Structure**
-    - job_name:operation:arguments:
+    - job_name:operation:arguments
         - Example: AwesomeJob:nodes_ingest:MyPrimaryLabel
         - Example: AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode  
 1. **Supported Operations**
