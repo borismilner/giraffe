@@ -17,5 +17,4 @@
 
 
 2. **Supported Operations**: nodes_ingest, edges_ingest
-
 3. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples
