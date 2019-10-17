@@ -13,9 +13,9 @@
 1. **REDIS Key Structure**: job_name:operation:arguments
     - For Example:
         - AwesomeJob:nodes_ingest:MyPrimaryLabel
-        - AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode
+        - AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode  
   
   
-2. **Supported Operations**: nodes_ingest, edges_ingest
+2. **Supported Operations**: nodes_ingest, edges_ingest  
   
-3. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples
+3. **Configuration Format**: https://wiki.python.org/moin/ConfigParserExamples  
