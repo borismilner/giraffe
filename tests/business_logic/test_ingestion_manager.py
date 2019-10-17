@@ -1,12 +1,12 @@
-from giraffe.business_logic.ingestion_manger import IngestionManager
-import giraffe.configuration.common_testing_artifactrs as commons
-from giraffe.helpers.config_helper import ConfigHelper
 from redis import Redis
+from giraffe.helpers.config_helper import ConfigHelper
+import giraffe.configuration.common_testing_artifactrs as commons
+from giraffe.business_logic.ingestion_manger import IngestionManager
 
 config = ConfigHelper()
 
 
-def test_populate_job():
+def test_publish_job():
     r: Redis = commons.redis_driver
     im: IngestionManager = commons.ingestion_manager
 

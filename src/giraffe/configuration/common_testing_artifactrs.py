@@ -19,6 +19,8 @@ ingestion_manager: IngestionManager = IngestionManager()
 def delete_redis_test_data():
     global log, redis_db, redis_driver, ingestion_manager
     db: RedisDB = redis_db
+    logger: Logger = log
+    logger.info("Emptying redis.")
     db.purge_all()
 
 
