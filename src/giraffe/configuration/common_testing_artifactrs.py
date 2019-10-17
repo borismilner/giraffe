@@ -49,7 +49,7 @@ def init_test_data():
 
 test_nodes = [
     {
-        '_uid': i,
+        config.uid_property: i,
         'name': f'person{i}',
         'age': i,
         'email': f'person{i}@gmail.com'
@@ -59,9 +59,9 @@ test_nodes = [
 
 test_edges = [
     {
-        '_fromUid': i,
-        '_toUid': i * 2,
-        '_edgeType': config.test_edge_type
+        config.from_uid_property: i,
+        config.to_uid_property: i * 2,
+        config.edge_type_property: config.test_edge_type
     }
     for i in range(0, config.number_of_test_edges)
 ]
