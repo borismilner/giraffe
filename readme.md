@@ -1,4 +1,8 @@
-<div align="center">
-<img src="resources/images/giraffe_page.png">
-<h1>Giraffe - Graph With Pleasure</h1>
-</div>
+![alt text](resources/images/giraffe_page.png "Giraffe!")
+# Giraffe - Graph With Pleasure
+
+## Features
+1. [x] Neo4j Integration
+1. [x] Redis Integration
+   1. [ ] Sub-task 1
+   1. [x] Sub-task 2
