@@ -19,6 +19,7 @@ class ConfigHelper:
         redis_section = 'REDIS'
         testing_section = 'TESTING'
         giraffe_section = 'GIRAFFE'
+        general_section = 'GENERAL'
 
         config_file_path = os.path.abspath(configurations_ini_file_path)
         self.log.info(f'Configuration file: {config_file_path}')
@@ -27,6 +28,13 @@ class ConfigHelper:
         self.config.read(configurations_ini_file_path)
 
         self.log.debug(f'Found the following configuration sections: {self.config.sections()}')
+
+        # General settings
+
+        if self.config.has_section(section=neo4j_section):
+            self.string_encoding = self.config[general_section]['string_encoding']
+        else:
+            self.log.warning(f'No configuration found for section {general_section}')
 
         # Reading Neo4j connection details from configuration-file
 

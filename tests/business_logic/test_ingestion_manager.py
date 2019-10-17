@@ -31,8 +31,8 @@ def test_publish_job():
     edges_keys = r.keys(pattern=f'{config.test_job_name}:{config.edges_ingestion_operation}:*')
     assert len(edges_keys) == 1
 
-    nodes_key = node_keys[0].decode('utf8')
-    edges_key = edges_keys[0].decode('utf8')
+    nodes_key = node_keys[0].decode(config.string_encoding)
+    edges_key = edges_keys[0].decode(config.string_encoding)
 
     num_stored_nodes = r.scard(name=nodes_key)
     assert num_stored_nodes == len(commons.test_nodes)
