@@ -15,9 +15,9 @@
         - Example: AwesomeJob:nodes_ingest:MyPrimaryLabel
         - Example: AwesomeJob:edges_ingest:EDGE_TYPE,LabelOfFromNode,LabelOfToNode  
     - node_body_format: {'**_uid**': 123, ... } - _uid is mandatory and must have globally unique value.
-        - Example: {'**_uid**': 790, 'name': 'person790', 'age': 790, 'email': 'person790@gmail.com'}
+        - Example: {'_uid': 790, 'name': 'person790', 'age': 790, 'email': 'person790@gmail.com'}
     - edge_body_format: {'**_uid**': _123_, ... } - _uid is mandatory and must have globally unique value.
-        - Example: {'**_fromUid**': 331, '**_toUid**': 662, '**_edgeType**': 'EDGE_TYPE'} - all are mandatory.    
+        - Example: {'_fromUid': 331, '**_toUid**': 662, '**_edgeType**': 'EDGE_TYPE'} - all are mandatory.    
 1. **Supported Operations**
     - nodes_ingest
     - edges_ingest    
