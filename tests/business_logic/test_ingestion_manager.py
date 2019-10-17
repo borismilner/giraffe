@@ -14,13 +14,13 @@ def test_publish_job():
 
     # Populate nodes
     im.publish_job(job_name=config.test_job_name,
-                   operation='nodes_ingest',
+                   operation=config.nodes_ingestion_operation,
                    operation_arguments=','.join(config.test_labels),
                    items=[str(value) for value in commons.test_nodes])
 
     # Populate edges
     im.publish_job(job_name=config.test_job_name,
-                   operation='edges_ingest',
+                   operation=config.edges_ingestion_operation,
                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]}',
                    items=[str(value) for value in commons.test_edges])
 
