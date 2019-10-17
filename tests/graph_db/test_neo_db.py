@@ -14,7 +14,7 @@ def init_test_data():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def init__and_finalize():
+def init_and_finalize():
     commons.log = log_helper.get_logger(logger_name='testing')
     commons.neo = neo_db.NeoDB()
     commons.delete_neo_test_data()
@@ -42,21 +42,6 @@ def test_neo_connection():
     assert is_service_available is True
 
 
-def test_merge_nodes():
-    neo = commons.neo
-    db: neo_db.NeoDB = neo
-    commons.delete_neo_test_data()
-    summary = db.merge_nodes(nodes=commons.test_nodes, label=config.test_labels[0])
-    assert summary.counters.nodes_created == len(commons.test_nodes)
-
-
-def test_merge_edges():
-    neo = commons.neo
-    db: neo_db.NeoDB = neo
-    summary = db.merge_edges(edges=commons.test_edges, from_label=config.test_labels[0], to_label=config.test_labels[0])
-    assert summary.counters.relationships_created == config.number_of_test_edges
-
-
 def test_create_index_if_not_exists():
     neo = commons.neo
     db: neo_db.NeoDB = neo
@@ -75,3 +60,18 @@ def test_drop_index_if_exists():
     db.create_index_if_not_exists(label=config.test_labels[0], property_name=config.test_property)
     summary = db.drop_index_if_exists(label=config.test_labels[0], property_name=config.test_property)
     assert summary.counters.indexes_removed == 1
+
+
+def test_merge_nodes():
+    neo = commons.neo
+    db: neo_db.NeoDB = neo
+    commons.delete_neo_test_data()
+    summary = db.merge_nodes(nodes=commons.test_nodes, label=config.test_labels[0])
+    assert summary.counters.nodes_created == len(commons.test_nodes)
+
+
+def test_merge_edges():
+    neo = commons.neo
+    db: neo_db.NeoDB = neo
+    summary = db.merge_edges(edges=commons.test_edges, from_label=config.test_labels[0], to_label=config.test_labels[0])
+    assert summary.counters.relationships_created == config.number_of_test_edges
