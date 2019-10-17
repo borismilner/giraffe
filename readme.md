@@ -19,7 +19,7 @@
         - Example: {'_uid': 790, 'name': 'person790', 'age': 790, 'email': 'person790@gmail.com'}
     - edge_body_format: {'**_uid**': _123_, ... } - _uid is mandatory and must have globally unique value.
         - Example: {'_fromUid': 331, '_toUid': 662, '_edgeType': 'EDGE_TYPE'} - all are mandatory.
-    - note that both nodes and edges bodies are string representation of python dictionary (it is required).
+    - note that both **nodes and edges bodies** are string representation of **python dictionary** (it is required).
 1. **Supported Operations**
     - nodes_ingest
     - edges_ingest    
