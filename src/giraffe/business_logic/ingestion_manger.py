@@ -30,9 +30,8 @@ class IngestionManager:
         if operation_name not in IngestionManager.supported_operations:
             raise UnexpectedOperation(f'Operation {operation_name} is not supported. (supported: {IngestionManager.supported_operations})')
 
-    @staticmethod
-    def validate_job_name(job_name: str):
-        if ':' in job_name:
+    def validate_job_name(self, job_name: str):
+        if self.config.key_separator in job_name:
             raise TechnicalError(f'Job name {job_name} must not contain colons (it is used internally...)')
 
     @staticmethod
@@ -56,7 +55,7 @@ class IngestionManager:
         if len(key_parts[0]) == 0:
             raise TechnicalError(f'Job name must not be empty ! [{key}]')
         job_name = key_parts[0]
-        IngestionManager.validate_job_name(job_name=job_name)
+        self.validate_job_name(job_name=job_name)
         operation = key_parts[1]
         IngestionManager.validate_operation(operation_name=operation)
 
