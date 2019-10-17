@@ -59,6 +59,7 @@ class NeoDB(object):
         return summary
 
     def pull_query(self, query: str):
+
         summary: BoltStatementResult
         with self._driver.session() as session:
             with session.begin_transaction() as tx:
