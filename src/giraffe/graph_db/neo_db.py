@@ -73,8 +73,6 @@ class NeoDB(object):
         # TODO: Consider saving date-time as epoch seconds/milliseconds
 
         self.create_index_if_not_exists(label=label, property_name=self.config.uid_property)
-        if label is None:
-            label = nodes[0]['_label']
         query = f"""
         UNWIND $nodes as node
         MERGE (p:{label}{{{self.config.uid_property}: node.{self.config.uid_property}}})
