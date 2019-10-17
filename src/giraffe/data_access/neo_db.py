@@ -82,7 +82,7 @@ class NeoDB(object):
                 tx.success = True
         return summary
 
-    def pull_query(self, query: str):
+    def pull_query(self, query: str) -> BoltStatementResult:
 
         summary: BoltStatementResult
         with self._driver.session() as session:
