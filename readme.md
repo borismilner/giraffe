@@ -31,3 +31,6 @@
 all nodes in a batch must have the same label.
 1. In **edge-ingestion**, while it is possible to match source and target nodes by their _uid (without their labels)  
 it is too slow and thus it currently is mandatory to provide both.
+
+## Main Classes
+![alt text](resources/images/main_classes.png "Main Classes")
