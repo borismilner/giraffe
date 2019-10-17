@@ -7,5 +7,4 @@
 - [x] Unit Testing
 
 ## Things to take care of
-- [ ] Sub-task 1
-- [x] Sub-task 2
+- [ ] Improve multi-processing
