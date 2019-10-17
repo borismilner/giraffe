@@ -32,7 +32,7 @@ def delete_neo_test_data():
     log.debug(f'Removed {summary.counters.nodes_deleted} {label_to_delete} nodes.')
 
 
-def init_test_data():
+def init_redis_test_data():
     global log, redis_db, redis_driver, ingestion_manager
     im: IngestionManager = ingestion_manager
 

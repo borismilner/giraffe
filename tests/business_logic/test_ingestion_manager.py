@@ -53,9 +53,9 @@ def test_publish_job():
 
 
 def test_process_job():
-    commons.delete_neo_test_data()
     commons.delete_redis_test_data()
-    commons.init_test_data()
+    commons.delete_neo_test_data()
+    commons.init_redis_test_data()
     im = commons.IngestionManager()
     im.process_job(job_name=config.test_job_name)
     query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'

@@ -20,7 +20,7 @@ def init__and_finalize():
 @pytest.fixture(autouse=True)
 def run_around_tests():
     commons.delete_redis_test_data()
-    commons.init_test_data()
+    commons.init_redis_test_data()
     yield
 
 
@@ -49,7 +49,7 @@ def test_delete_keys():
     db: RedisDB = commons.redis_db
     r: Redis = commons.redis_driver
     commons.delete_redis_test_data()
-    commons.init_test_data()
+    commons.init_redis_test_data()
     keys_to_delete = [key.decode(config.string_encoding) for key in r.keys(pattern=f'{config.test_job_name}*')]
     db.delete_keys(keys=keys_to_delete)
     after_deletion = (key.decode(config.string_encoding) for key in r.keys(pattern='test_key*'))
