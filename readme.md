@@ -22,4 +22,4 @@
 ## Current Limitations
 
 1. Since UNWIND won't allow dynamic labels (as it is being compiled into the query)  
-all nodes in a node-ingestion-batch must have the same label (same as edge-type in edge-ingestion).
+all nodes in a node-ingestion-batch must have the same label (same for edge-type in edge-ingestion).
