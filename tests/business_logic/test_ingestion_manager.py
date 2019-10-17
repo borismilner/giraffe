@@ -53,6 +53,7 @@ def test_publish_job():
 
 
 def test_process_job():
+    commons.delete_neo_test_data()
     commons.delete_redis_test_data()
     commons.init_test_data()
     im = commons.IngestionManager()
