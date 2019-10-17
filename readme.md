@@ -21,7 +21,7 @@
     - https://wiki.python.org/moin/ConfigParserExamples  
 ## Current Limitations
 
-1. In node-ingestion, since UNWIND won't allow dynamic labels (as it is being compiled into the query)  
+1. In **node-ingestion**, since UNWIND won't allow dynamic labels (as it is being compiled into the query)  
 all nodes in a batch must have the same label.
-1. In edge-ingestion, while it is possible to match source and target nodes by their _uid (without their labels)  
+1. In **edge-ingestion**, while it is possible to match source and target nodes by their _uid (without their labels)  
 it is too slow and thus it currently is mandatory to provide both.
