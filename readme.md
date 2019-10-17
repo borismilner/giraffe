@@ -9,7 +9,7 @@
 ## Things to take care of  
 - [ ] Improve multi-processing
 
-## Things to notice
+## Things to know
 1. **REDIS Key Structure**: job_name:operation:arguments
     - For Example:
         - AwesomeJob:nodes_ingest:MyPrimaryLabel
