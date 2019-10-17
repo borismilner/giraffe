@@ -89,11 +89,15 @@ class IngestionManager:
                 self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
 
     def push_to_neo(self, awaiting_jobs, is_nodes, jobs, key):
+        key_parts = self.parse_redis_key(key=key)
         self.log.info(f'Placing {awaiting_jobs} {"nodes" if is_nodes else "edges"} into Neo4j')
-        arguments = key.split(':')[2].split(',')
         jobs = [eval(job) for job in jobs]
         if is_nodes:
-            self.neo_db.merge_nodes(nodes=jobs, label=arguments[0])  # TODO: Adjust for multiple labels
+            self.neo_db.merge_nodes(nodes=jobs,
+                                    label=str(key_parts.arguments[0]))  # TODO: Adjust for multiple labels
         else:
-            self.neo_db.merge_edges(edges=jobs, from_label=arguments[1], to_label=arguments[2], edge_type=arguments[0])
+            self.neo_db.merge_edges(edges=jobs,
+                                    from_label=key_parts.arguments[1],
+                                    to_label=key_parts.arguments[2],
+                                    edge_type=key_parts.arguments[0])
         jobs.clear()

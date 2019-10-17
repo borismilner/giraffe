@@ -37,7 +37,7 @@ def init_test_data():
     # Populate nodes
     im.publish_job(job_name=config.test_job_name,
                    operation='nodes_ingest',
-                   operation_arguments=','.join(config.test_labels),
+                   operation_arguments=config.test_labels[0],
                    items=[str(value) for value in test_nodes])
 
     # Populate edges
