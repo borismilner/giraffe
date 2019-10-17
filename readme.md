@@ -2,7 +2,9 @@
 # Giraffe - Graph With Pleasure
 
 ## Features
-1. [x] Neo4j Integration
-1. [x] Redis Integration
-   1. [ ] Sub-task 1
-   1. [x] Sub-task 2
+[x] Neo4j Integration
+[x] Redis Integration
+[x] Unit Testing
+
+## Things to take care of
+[ ] Improve multi-processing
