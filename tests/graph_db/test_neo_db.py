@@ -1,7 +1,7 @@
 import pytest
 import giraffe.configuration.common_testing_artifactrs as commons
 from giraffe.exceptions.technical import TechnicalError
-from giraffe.graph_db import neo_db
+from giraffe.data_access import neo_db
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 

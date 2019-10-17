@@ -1,10 +1,10 @@
 from logging import Logger
 
 from giraffe.business_logic.ingestion_manger import IngestionManager
-from giraffe.graph_db.neo_db import NeoDB
+from giraffe.data_access.neo_db import NeoDB
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
-from giraffe.tools.redis_db import RedisDB
+from giraffe.data_access.redis_db import RedisDB
 from redis import Redis
 
 config = ConfigHelper()

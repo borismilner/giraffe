@@ -4,7 +4,7 @@ import giraffe.configuration.common_testing_artifactrs as commons
 import pytest
 from giraffe.business_logic.ingestion_manger import IngestionManager
 from giraffe.helpers.config_helper import ConfigHelper
-from giraffe.tools.redis_db import RedisDB
+from giraffe.data_access.redis_db import RedisDB
 from redis import Redis
 
 config = ConfigHelper()
