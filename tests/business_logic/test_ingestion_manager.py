@@ -26,9 +26,9 @@ def test_publish_job():
 
     keys = r.keys(pattern=f'{config.test_job_name}*')
     assert len(keys) == 2
-    node_keys = r.keys(pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}{config.key_separator}*')
+    node_keys = r.keys(pattern=f'{config.test_job_name}{config.key_separator}{config.nodes_ingestion_operation}{config.key_separator}*')
     assert len(node_keys) == 1
-    edges_keys = r.keys(pattern=f'{config.test_job_name}:{config.edges_ingestion_operation}{config.key_separator}*')
+    edges_keys = r.keys(pattern=f'{config.test_job_name}{config.key_separator}{config.edges_ingestion_operation}{config.key_separator}*')
     assert len(edges_keys) == 1
 
     nodes_key = node_keys[0].decode(config.string_encoding)
