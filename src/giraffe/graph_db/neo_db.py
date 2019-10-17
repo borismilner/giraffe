@@ -71,7 +71,6 @@ class NeoDB(object):
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
 
-        nodes = nodes
         self.create_index_if_not_exists(label=label, property_name=self.config.uid_property)
         if label is None:
             label = nodes[0]['_label']
@@ -87,7 +86,7 @@ class NeoDB(object):
     # NOTE: while it is possible to match without the from/to labels - it is too slow.
     def merge_edges(self, edges: List, from_label: str, to_label: str, edge_type: str = None) -> BoltStatementResultSummary:
         if edge_type is None:
-            edge_type = edges[0]['_edgeType']
+            edge_type = edges[0][self.config.edge_type_property]
         query = f"""
         UNWIND $edges as edge
         MATCH (fromNode:{from_label}) WHERE fromNode.{self.config.uid_property} = edge.{self.config.from_uid_property}

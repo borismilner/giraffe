@@ -70,5 +70,6 @@ class ConfigHelper:
             self.uid_property = self.config[giraffe_section]['unique_identifier_property_name']
             self.from_uid_property = self.config[giraffe_section]['from_uid_property_name']
             self.to_uid_property = self.config[giraffe_section]['to_uid_property_name']
+            self.edge_type_property = self.config[giraffe_section]['edge_type_property_name']
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')
