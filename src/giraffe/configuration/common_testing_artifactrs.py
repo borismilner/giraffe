@@ -1,6 +1,7 @@
 from logging import Logger
 
 from giraffe.business_logic.ingestion_manger import IngestionManager
+from giraffe.data_access import neo_db
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
@@ -47,6 +48,12 @@ def init_redis_test_data():
                    operation='edges_ingest',
                    operation_arguments=f'{config.test_edge_type},{config.test_labels[0]},{config.test_labels[0]}',
                    items=[str(value) for value in test_edges])
+
+
+def init_test_data():
+    global neo
+    db: neo_db.NeoDB = neo
+    db.merge_nodes(nodes=test_nodes, label=config.test_labels[0])
 
 
 test_nodes = [

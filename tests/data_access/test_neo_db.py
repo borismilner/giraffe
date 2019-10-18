@@ -8,11 +8,6 @@ from giraffe.helpers.config_helper import ConfigHelper
 config = ConfigHelper()
 
 
-def init_test_data():
-    db: neo_db.NeoDB = commons.neo
-    db.merge_nodes(nodes=commons.test_nodes, label=config.test_labels[0])
-
-
 @pytest.fixture(scope="session", autouse=True)
 def init_and_finalize():
     commons.log = log_helper.get_logger(logger_name='testing')
@@ -24,7 +19,7 @@ def init_and_finalize():
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
-    init_test_data()
+    commons.init_test_data()
     yield
     commons.delete_neo_test_data()
 
