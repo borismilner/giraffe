@@ -5,6 +5,11 @@
 - [x] Neo4j Integration  
 - [x] Redis Integration  
 - [x] Unit Testing  
+
+## Tested
+- Python 3.7, 3.8
+- Neo4j 3.5.12 community edition (Linux/Windows)
+- Redis 5.0.3 (Linux)
   
 ## Things To Take Care Of  
 - [ ] Improve multi-processing
