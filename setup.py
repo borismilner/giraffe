@@ -8,5 +8,5 @@ setup(
     license='Nothing here so far',
     author='Boris Milner',
     author_email='boris.milner@gmail.com',
-    long_description='readme.md'
+    long_description=open('readme.md').read()
 )

@@ -6,9 +6,7 @@ from giraffe.helpers import log_helper
 
 
 class ConfigHelper:
-    __module_folder = os.path.dirname(os.path.abspath(__file__))
-    __default_config_relative_to_module = '../configuration/defaults.ini'
-    default_configurations_file = os.path.join(__module_folder, __default_config_relative_to_module)
+    default_configurations_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'configuration/defaults.ini'))
 
     def __init__(self, configurations_ini_file_path: str = default_configurations_file):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
