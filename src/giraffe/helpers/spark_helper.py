@@ -34,3 +34,10 @@ class SparkHelper(object):
         sql_context = SQLContext(self.spark_session.sparkContext)
         es_df = sql_context.read.format("org.elasticsearch.spark.sql").load(f"{index_name}")
         return es_df
+
+    @staticmethod
+    def write_df_to_redis(df, key_prefix: str):
+        df.write.format("org.apache.spark.sql.redis") \
+            .option("table", key_prefix) \
+            .mode('Overwrite') \
+            .save()

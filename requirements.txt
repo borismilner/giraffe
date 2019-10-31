@@ -1,3 +1,4 @@
+findspark
 nox
 neobolt
 neo4j
