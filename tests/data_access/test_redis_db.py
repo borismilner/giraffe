@@ -58,6 +58,6 @@ def test_delete_keys():
 
 def test_pull_in_batches():
     db: RedisDB = commons.redis_db
-    nodes_iterator = db.pull_in_batches(key_pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}:{config.test_labels[0]}', batch_size=500)
+    nodes_iterator = db.pull_set_members_in_batches(key_pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}:{config.test_labels[0]}', batch_size=500)
     nodes = [node.decode(config.string_encoding) for node in nodes_iterator]
     assert len(nodes) == len(commons.test_nodes)

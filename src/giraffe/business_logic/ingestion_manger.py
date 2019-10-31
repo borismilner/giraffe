@@ -75,7 +75,7 @@ class IngestionManager:
         # Nodes
         for i, key in enumerate(keys_found):
             is_nodes = i == 0
-            iterator = self.redis_db.pull_in_batches(key_pattern=key, batch_size=batch_size)
+            iterator = self.redis_db.pull_set_members_in_batches(key_pattern=key, batch_size=batch_size)
             awaiting_jobs = 0
             jobs = []
             for job in iterator:
