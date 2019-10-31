@@ -18,6 +18,7 @@ class ConfigHelper:
         testing_section = 'TESTING'
         giraffe_section = 'GIRAFFE'
         general_section = 'GENERAL'
+        spark_section = 'SPARK'
 
         config_file_path = os.path.abspath(configurations_ini_file_path)
         self.log.info(f'Configuration file: {config_file_path}')
@@ -79,3 +80,10 @@ class ConfigHelper:
             self.edge_type_property = self.config[giraffe_section]['edge_type_property_name']
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')
+
+        if self.config.has_section(section=spark_section):
+            # Spark logic
+            self.external_jars_folder = self.config[spark_section]['external_jars']
+            self.spark_app_name = self.config[spark_section]['app_name']
+        else:
+            self.log.warning(f'No configuration found for section {spark_section}')

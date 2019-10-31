@@ -50,14 +50,14 @@ def test_delete_keys():
     r: Redis = commons.redis_driver
     commons.delete_redis_test_data()
     commons.init_redis_test_data()
-    keys_to_delete = [key.decode(config.string_encoding) for key in r.keys(pattern=f'{config.test_job_name}*')]
+    keys_to_delete = [key for key in r.keys(pattern=f'{config.test_job_name}*')]
     db.delete_keys(keys=keys_to_delete)
-    after_deletion = (key.decode(config.string_encoding) for key in r.keys(pattern='test_key*'))
+    after_deletion = (key for key in r.keys(pattern='test_key*'))
     assert any(after_deletion) is False
 
 
 def test_pull_in_batches():
     db: RedisDB = commons.redis_db
     nodes_iterator = db.pull_set_members_in_batches(key_pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}:{config.test_labels[0]}', batch_size=500)
-    nodes = [node.decode(config.string_encoding) for node in nodes_iterator]
+    nodes = [node for node in nodes_iterator]
     assert len(nodes) == len(commons.test_nodes)

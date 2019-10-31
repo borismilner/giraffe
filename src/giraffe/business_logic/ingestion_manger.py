@@ -79,7 +79,7 @@ class IngestionManager:
             awaiting_jobs = 0
             jobs = []
             for job in iterator:
-                jobs.append(job.decode('utf8'))
+                jobs.append(job)
                 awaiting_jobs += 1
                 if awaiting_jobs >= batch_size:
                     self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)

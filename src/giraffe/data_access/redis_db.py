@@ -13,7 +13,7 @@ class RedisDB(object):
     def __init__(self, config: ConfigHelper = ConfigHelper()):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.log.debug(f'Initialising redis driver.')
-        self.driver: Redis = redis.Redis(host=config.redis_host_address, port=config.redis_port)
+        self.driver: Redis = redis.StrictRedis(host=config.redis_host_address, port=config.redis_port, decode_responses=True)
         atexit.register(self.driver.close)
 
     def __enter__(self):
@@ -46,5 +46,5 @@ class RedisDB(object):
 
     def get_key_by_pattern(self, key_pattern: str):
         r: Redis = self.driver
-        found_keys: List[str] = [key.decode('utf8') for key in r.keys(pattern=key_pattern)]
+        found_keys: List[str] = [key for key in r.keys(pattern=key_pattern)]
         return found_keys
