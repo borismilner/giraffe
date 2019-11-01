@@ -32,7 +32,7 @@ def test_get_spark_session():
 
 
 def test_read_elasticsearch_index():
-    df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
+    df: DataFrame = spark_helper.read_df_from_elasticsearch_index(index_name=config.test_elasticsearch_index)
     assert isinstance(df, DataFrame)
     pd_df = df.toPandas()
     expected_num_rows, expected_num_columns = pd_df.shape[0], pd_df.shape[1]
@@ -44,7 +44,7 @@ def test_read_elasticsearch_index():
 
 def test_read_from_es_write_to_redis():
     commons.delete_redis_keys_prefix(prefix=f'{config.test_redis_table_prefix}*')
-    df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
+    df: DataFrame = spark_helper.read_df_from_elasticsearch_index(index_name=config.test_elasticsearch_index)
     spark_helper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
     num_keys_written = 0
     for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a SCARD!

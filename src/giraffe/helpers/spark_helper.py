@@ -28,7 +28,7 @@ class SparkHelper(object):
             .config("es.read.field.as.array.include", "long-text").getOrCreate()  # Adjust this configuration
         return spark
 
-    def read_elasticsearch_index(self, index_name: str) -> DataFrame:
+    def read_df_from_elasticsearch_index(self, index_name: str) -> DataFrame:
         sql_context = SQLContext(self.spark_session.sparkContext)
         es_df = sql_context.read.format("org.elasticsearch.spark.sql").load(f"{index_name}")
         return es_df
