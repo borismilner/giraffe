@@ -6,7 +6,7 @@ import findspark
 from giraffe.exceptions.technical import TechnicalError
 
 findspark.init()
-from pyspark.sql import SQLContext
+from pyspark.sql import SQLContext, DataFrame
 from pyspark.sql import SparkSession
 
 
@@ -30,7 +30,7 @@ class SparkHelper(object):
             .config("es.read.field.as.array.include", "long-text").getOrCreate()  # Adjust this configuration
         return spark
 
-    def read_elasticsearch_index(self, index_name: str):
+    def read_elasticsearch_index(self, index_name: str) -> DataFrame:
         sql_context = SQLContext(self.spark_session.sparkContext)
         es_df = sql_context.read.format("org.elasticsearch.spark.sql").load(f"{index_name}")
         return es_df

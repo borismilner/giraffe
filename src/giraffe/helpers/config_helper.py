@@ -19,6 +19,7 @@ class ConfigHelper:
         giraffe_section = 'GIRAFFE'
         general_section = 'GENERAL'
         spark_section = 'SPARK'
+        elastic_section = 'ELASTICSEARCH'
 
         config_file_path = os.path.abspath(configurations_ini_file_path)
         self.log.info(f'Configuration file: {config_file_path}')
@@ -65,6 +66,7 @@ class ConfigHelper:
             self.number_of_test_edges = int(self.config[testing_section]['number_of_test_edges'])
             self.test_chunk_size = int(self.config[testing_section]['test_chunk_size'])
             self.test_job_name = self.config[testing_section]['test_request_name']
+            self.test_elasticsearch_index = self.config[testing_section]['test_elasticsearch_index']
 
         else:
             self.log.warning(f'No configuration found for section {testing_section}')
@@ -87,3 +89,9 @@ class ConfigHelper:
             self.spark_app_name = self.config[spark_section]['app_name']
         else:
             self.log.warning(f'No configuration found for section {spark_section}')
+
+        if self.config.has_section(section=elastic_section):
+            # ElasticSearch logic
+            self.es_host_address = self.config[elastic_section]['HOST']
+        else:
+            self.log.warning(f'No configuration found for section {elastic_section}')

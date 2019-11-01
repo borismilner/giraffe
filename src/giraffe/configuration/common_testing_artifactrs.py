@@ -6,6 +6,7 @@ from giraffe.data_access.neo_db import NeoDB
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.data_access.redis_db import RedisDB
+from elasticsearch import Elasticsearch, helpers
 from redis import Redis
 
 config = ConfigHelper()
@@ -15,6 +16,7 @@ neo: NeoDB = NeoDB(ConfigHelper())
 redis_db: RedisDB = RedisDB(ConfigHelper())
 redis_driver: Redis = redis_db.get_driver()
 ingestion_manager: IngestionManager = IngestionManager()
+elastic_search: Elasticsearch = Elasticsearch()
 
 
 def delete_redis_test_data():
@@ -31,6 +33,28 @@ def delete_neo_test_data():
     query = f'MATCH (node:{label_to_delete}) DETACH DELETE node'
     summary = neo.run_query(query=query)
     log.debug(f'Removed {summary.counters.nodes_deleted} {label_to_delete} nodes.')
+
+
+def delete_elastic_test_data():
+    global elastic_search, redis_db, redis_driver, ingestion_manager
+    es: Elasticsearch = elastic_search
+    test_index = config.test_elasticsearch_index
+    log.debug(f'Purging ES test index: {test_index}')
+    es.indices.delete(index=test_index, ignore=[400, 404])
+
+
+def init_elastic_test_data():
+    global elastic_search, log, redis_db, redis_driver, ingestion_manager
+    es: Elasticsearch = elastic_search
+    actions = []
+    for node in test_nodes:
+        actions.append(
+            {
+                "_index": config.test_elasticsearch_index,
+                "_source": node
+            }
+        )
+    helpers.bulk(es, actions, refresh=True)
 
 
 def init_redis_test_data():
