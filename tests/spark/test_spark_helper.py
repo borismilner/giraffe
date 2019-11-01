@@ -47,6 +47,6 @@ def test_read_from_es_write_to_redis():
     df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
     spark_helper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
     num_keys_written = 0
-    for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a set !
+    for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a set (SCARD)!
         num_keys_written += 1
     assert num_keys_written == config.number_of_test_nodes
