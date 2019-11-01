@@ -1,5 +1,3 @@
-import time
-
 import pytest
 from giraffe.helpers import log_helper
 from giraffe.helpers.spark_helper import SparkHelper
