@@ -1,6 +1,4 @@
 import os
-from os import listdir
-from os.path import join
 from giraffe.helpers.config_helper import ConfigHelper
 import findspark
 from giraffe.exceptions.technical import TechnicalError
@@ -19,7 +17,7 @@ class SparkHelper(object):
     def list_external_jars(jars_folder: str) -> str:
         if not os.path.isdir(jars_folder):
             raise TechnicalError(f'Path is not a folder: {jars_folder}')
-        jar_files = ','.join([f'{join(jars_folder, file_name)}' for file_name in listdir(jars_folder) if file_name.endswith('.jar')])
+        jar_files = ','.join([f'{os.join(jars_folder, file_name)}' for file_name in os.listdir(jars_folder) if file_name.endswith('.jar')])
         return jar_files
 
     def get_spark_session(self):
