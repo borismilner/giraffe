@@ -1,6 +1,6 @@
 import atexit
 from typing import List, Union
-from giraffe.exceptions.logical import QuerySyntaxError
+from giraffe.exceptions.logical import QuerySyntaxError, PropertyNotIndexedError
 from giraffe.helpers.config_helper import ConfigHelper
 from neo4j import GraphDatabase, BoltStatementResultSummary, BoltStatementResult
 from neobolt.exceptions import ServiceUnavailable, CypherSyntaxError
@@ -118,4 +118,15 @@ class NeoDB(object):
         """
 
         summary = self.run_query(query=query, edges=edges)
+        return summary
+
+    def delete_nodes_by_property(self, label: str, property_name: str, property_value: str):
+        if not self.is_index_exists(label=label, property_name=property_name):
+            raise PropertyNotIndexedError(f'Property {property_name} must be indexed in-order to delete nodes by it.')
+        query = f"""
+        MATCH(n:{label} {{{property_name}: {property_value if property_value.isdigit() else "'" + property_value + "'"}}})
+        DETACH DELETE n
+        """
+
+        summary = self.run_query(query=query)
         return summary

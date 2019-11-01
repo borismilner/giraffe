@@ -89,6 +89,7 @@ def init_test_data():
     global neo
     db: neo_db.NeoDB = neo
     db.merge_nodes(nodes=test_nodes, label=config.test_labels[0])
+    db.create_index_if_not_exists(label=config.test_labels[0], property_name='_uid')
 
 
 test_nodes = [

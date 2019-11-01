@@ -11,3 +11,7 @@ class MissingKeyError(GiraffeException):
 
 class UnexpectedOperation(GiraffeException):
     pass
+
+
+class PropertyNotIndexedError(GiraffeException):
+    pass

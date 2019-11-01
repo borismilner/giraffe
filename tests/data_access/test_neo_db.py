@@ -70,3 +70,16 @@ def test_merge_edges():
     db: neo_db.NeoDB = neo
     summary = db.merge_edges(edges=commons.test_edges, from_label=config.test_labels[0], to_label=config.test_labels[0])
     assert summary.counters.relationships_created == config.number_of_test_edges
+
+
+def test_delete_nodes_by_property():
+    neo = commons.neo
+    db: neo_db.NeoDB = neo
+    test_label = config.test_labels[0]
+    query = f"MATCH(n:{test_label}) return count(n) as count"
+    before_deletion_count = db.pull_query(query=query).value()[0]
+    summary = db.delete_nodes_by_property(label=test_label, property_name='_uid', property_value='1')
+    after_deletion_count = db.pull_query(query=query).value()[0]
+    summary_deleted_count = summary.counters.nodes_deleted
+    assert summary_deleted_count > 0
+    assert before_deletion_count - after_deletion_count == summary_deleted_count
