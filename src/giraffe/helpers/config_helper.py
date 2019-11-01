@@ -81,6 +81,7 @@ class ConfigHelper:
             self.from_uid_property = self.config[giraffe_section]['from_uid_property_name']
             self.to_uid_property = self.config[giraffe_section]['to_uid_property_name']
             self.edge_type_property = self.config[giraffe_section]['edge_type_property_name']
+            self.deletion_batch_size = self.config[giraffe_section]['deletion_batch_size']
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')
 

@@ -1,5 +1,5 @@
 import atexit
-from typing import List, Union
+from typing import List, Union, Dict
 from giraffe.exceptions.logical import QuerySyntaxError, PropertyNotIndexedError
 from giraffe.helpers.config_helper import ConfigHelper
 from neo4j import GraphDatabase, BoltStatementResultSummary, BoltStatementResult
@@ -120,13 +120,14 @@ class NeoDB(object):
         summary = self.run_query(query=query, edges=edges)
         return summary
 
-    def delete_nodes_by_property(self, label: str, property_name: str, property_value: str):
+    def delete_nodes_by_property(self, label: str, property_name: str, property_value: str) -> Dict[str, int]:
         if not self.is_index_exists(label=label, property_name=property_name):
             raise PropertyNotIndexedError(f'Property {property_name} must be indexed in-order to delete nodes by it.')
+
         query = f"""
-        MATCH(n:{label} {{{property_name}: {property_value if property_value.isdigit() else "'" + property_value + "'"}}})
-        DETACH DELETE n
+        call apoc.periodic.iterate("MATCH (n:{label}) where n.{property_name}={property_value} return n", "DETACH DELETE n", {{batchSize:{int(self.config.deletion_batch_size)}}})
+        yield batches, total return batches, total
         """
 
-        summary = self.run_query(query=query)
-        return summary
+        result = next(self.pull_query(query=query).records())
+        return {'batches': result['batches'], 'total': result['total']}
