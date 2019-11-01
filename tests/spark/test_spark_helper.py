@@ -3,14 +3,15 @@ import time
 import pytest
 from giraffe.helpers import log_helper
 from giraffe.helpers.spark_helper import SparkHelper
-from redis import Redis
 from giraffe.helpers.config_helper import ConfigHelper
+from giraffe.data_access.redis_db import RedisDB
 from pyspark.sql.session import SparkSession
 from pyspark.sql import DataFrame
 import giraffe.configuration.common_testing_artifactrs as commons
 
 config = ConfigHelper()
 spark_helper = SparkHelper()
+r = RedisDB().get_driver()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -33,13 +34,21 @@ def test_get_spark_session():
 
 
 def test_read_elasticsearch_index():
-    commons.delete_elastic_test_data()
-    commons.init_elastic_test_data()
     df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
     assert isinstance(df, DataFrame)
     pd_df = df.toPandas()
-    rows, columns = pd_df.shape[0], pd_df.shape[1]
-    assert rows == len(commons.test_nodes)  # Expected number of rows
-    assert columns == len(commons.test_nodes[0].keys())  # Expected number of columns
+    expected_num_rows, expected_num_columns = pd_df.shape[0], pd_df.shape[1]
+    assert expected_num_rows == len(commons.test_nodes)
+    assert expected_num_columns == len(commons.test_nodes[0].keys())
     for column_name in pd_df.columns:
         assert column_name in commons.test_nodes[0].keys()
+
+
+def test_read_from_es_write_to_redis():
+    commons.delete_redis_test_data(prefix=f'{config.test_redis_table_prefix}*')
+    df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
+    SparkHelper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
+    num_keys_written = 0
+    for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a set !
+        num_keys_written += 1
+    assert num_keys_written == config.number_of_test_nodes

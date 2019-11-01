@@ -67,6 +67,7 @@ class ConfigHelper:
             self.test_chunk_size = int(self.config[testing_section]['test_chunk_size'])
             self.test_job_name = self.config[testing_section]['test_request_name']
             self.test_elasticsearch_index = self.config[testing_section]['test_elasticsearch_index']
+            self.test_redis_table_prefix = self.config[testing_section]['test_redis_table_prefix']
 
         else:
             self.log.warning(f'No configuration found for section {testing_section}')
