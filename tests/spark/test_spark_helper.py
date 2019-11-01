@@ -43,7 +43,7 @@ def test_read_elasticsearch_index():
 
 
 def test_read_from_es_write_to_redis():
-    commons.delete_redis_test_data(prefix=f'{config.test_redis_table_prefix}*')
+    commons.delete_redis_keys_prefix(prefix=f'{config.test_redis_table_prefix}*')
     df: DataFrame = spark_helper.read_elasticsearch_index(index_name=config.test_elasticsearch_index)
     SparkHelper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
     num_keys_written = 0

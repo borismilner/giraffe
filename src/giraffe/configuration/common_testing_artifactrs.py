@@ -43,7 +43,7 @@ def delete_elastic_test_data():
     es.indices.delete(index=test_index, ignore=[400, 404])
 
 
-def delete_redis_test_data(prefix: str) -> int:
+def delete_redis_keys_prefix(prefix: str) -> int:
     r = redis_db.get_driver()
     num_deleted = 0
     log.debug(f'Deleting keys with a prefix of: {prefix}')
