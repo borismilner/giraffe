@@ -1,3 +1,4 @@
+pyspark
 findspark
 nox
 neobolt
