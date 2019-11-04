@@ -70,26 +70,26 @@ def test_process_job():
     assert count == config.number_of_test_edges
 
 
-def test_process_spark_redis_table():
-    spark_helper = SparkHelper()
-    r = RedisDB().driver
-    commons.delete_redis_test_data()
-    commons.delete_neo_test_data()
-    im = commons.IngestionManager()
-
-    commons.delete_redis_keys_prefix(prefix=f'{config.test_redis_table_prefix}*')
-    df: DataFrame = spark_helper.read_df_from_elasticsearch_index(index_name=config.test_elasticsearch_index)
-    spark_helper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
-    num_keys_written = 0
-    for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a SCARD!
-        num_keys_written += 1
-    assert num_keys_written == config.number_of_test_nodes
-
-    im.process_spark_redis_table(job_name=config.test_job_name, batch_size=50)
-    query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'
-    count = commons.neo.pull_query(query=query).value()[0]
-    assert count == config.number_of_test_nodes
-    query = f'MATCH ()-[:{commons.config.test_edge_type}]-() RETURN COUNT(*) AS count'
-    count = commons.neo.pull_query(query=query).value()[0]
-    assert count == config.number_of_test_edges
-    pass
+# def test_process_spark_redis_table():
+#     spark_helper = SparkHelper()
+#     r = RedisDB().driver
+#     commons.delete_redis_test_data()
+#     commons.delete_neo_test_data()
+#     im = commons.IngestionManager()
+#
+#     commons.delete_redis_keys_prefix(prefix=f'{config.test_redis_table_prefix}*')
+#     df: DataFrame = spark_helper.read_df_from_elasticsearch_index(index_name=config.test_elasticsearch_index)
+#     spark_helper.write_df_to_redis(df=df, key_prefix=config.test_redis_table_prefix)
+#     num_keys_written = 0
+#     for _ in r.scan_iter(f'{config.test_redis_table_prefix}*'):  # Notice how you can't access the whole group in O(1) as opposed to a SCARD!
+#         num_keys_written += 1
+#     assert num_keys_written == config.number_of_test_nodes
+#
+#     im.process_spark_redis_table(job_name=config.test_job_name, batch_size=50)
+#     query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'
+#     count = commons.neo.pull_query(query=query).value()[0]
+#     assert count == config.number_of_test_nodes
+#     query = f'MATCH ()-[:{commons.config.test_edge_type}]-() RETURN COUNT(*) AS count'
+#     count = commons.neo.pull_query(query=query).value()[0]
+#     assert count == config.number_of_test_edges
+#     pass
