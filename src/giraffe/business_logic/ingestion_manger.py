@@ -6,6 +6,7 @@ from giraffe.exceptions.logical import MissingKeyError, UnexpectedOperation
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.helpers import log_helper
+from giraffe.helpers.utilities import iterable_in_chunks
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.data_access.redis_db import RedisDB
 from redis import Redis
@@ -87,28 +88,35 @@ class IngestionManager:
             if len(jobs) > 0:
                 self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
 
+    # ---------------------------------------------------------------------------------------------------------------------------------------------#
+    # This is an experimental feature, dealing with a redis-format dictated by the spark-redis "table" option.
+    # This feature assumes the _uid field is to be taken from the final part of the key for each graph-element
     def process_spark_redis_table(self, job_name: str, batch_size: int = 50_000):
+
         node_keys = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}{self.config.key_separator}{self.config.nodes_ingestion_operation}*')
         edges_keys = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}{self.config.key_separator}{self.config.edges_ingestion_operation}*')
 
-        for i, key in enumerate(node_keys, edges_keys):
+        for i, element_keys in enumerate((node_keys, edges_keys)):
             is_nodes = i == 0
-            iterator = self.redis_db.pull_set_members_in_batches(key_pattern=key, batch_size=batch_size)
-            awaiting_jobs = 0
-            jobs = []
-            for job in iterator:
-                jobs.append(job)
-                awaiting_jobs += 1
-                if awaiting_jobs >= batch_size:
-                    self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
-                    awaiting_jobs = 0
-            if len(jobs) > 0:
-                self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
 
-    def push_to_neo(self, awaiting_jobs, is_nodes, jobs, key):
+            element_key = None
+            for keys in iterable_in_chunks(iterable=element_keys, chunk_size=batch_size):
+                jobs = self.redis_db.pull_batch_hashes_by_keys(keys=keys)
+                # Planting the key inside the value-body
+                for index, key in enumerate(keys):
+                    if not element_key:
+                        element_key = ''.join(key.split(self.config.key_separator)[0:-1])
+                    jobs[index][self.config.uid_property] = key.split(self.config.key_separator)[-1]
+
+                self.push_to_neo(awaiting_jobs=len(jobs), is_nodes=is_nodes, jobs=jobs, key=element_key, needs_eval=False)
+
+    # ---------------------------------------------------------------------------------------------------------------------------------------------#
+
+    def push_to_neo(self, awaiting_jobs, is_nodes, jobs, key, needs_eval=True):  # needs_eval must be True when jobs are strings (and not dicts)
         key_parts = self.parse_redis_key(key=key)
         self.log.info(f'Placing {awaiting_jobs} {"nodes" if is_nodes else "edges"} into Neo4j')
-        jobs = [eval(job) for job in jobs]
+        if needs_eval:
+            jobs = [eval(job) for job in jobs]
         if is_nodes:
             self.neo_db.merge_nodes(nodes=jobs,
                                     label=str(key_parts.arguments[0]))  # TODO: Adjust for multiple labels
