@@ -1,7 +1,6 @@
 from giraffe.helpers.spark_helper import SparkHelper
 from pyspark.sql import DataFrame
 from redis import Redis
-from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers.config_helper import ConfigHelper
 import giraffe.configuration.common_testing_artifactrs as commons
 from giraffe.business_logic.ingestion_manger import IngestionManager
@@ -91,6 +90,3 @@ def test_process_spark_redis_table():
     query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'
     count = commons.neo.pull_query(query=query).value()[0]
     assert count == config.number_of_test_nodes
-    # query = f'MATCH ()-[:{commons.config.test_edge_type}]-() RETURN COUNT(*) AS count'
-    # count = commons.neo.pull_query(query=query).value()[0]
-    # assert count == config.number_of_test_edges
