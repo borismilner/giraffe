@@ -87,6 +87,24 @@ class IngestionManager:
             if len(jobs) > 0:
                 self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
 
+    def process_spark_redis_table(self, job_name: str, batch_size: int = 50_000):
+        node_keys = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}{self.config.key_separator}{self.config.nodes_ingestion_operation}*')
+        edges_keys = self.redis_db.get_key_by_pattern(key_pattern=f'{job_name}{self.config.key_separator}{self.config.edges_ingestion_operation}*')
+
+        for i, key in enumerate(node_keys, edges_keys):
+            is_nodes = i == 0
+            iterator = self.redis_db.pull_set_members_in_batches(key_pattern=key, batch_size=batch_size)
+            awaiting_jobs = 0
+            jobs = []
+            for job in iterator:
+                jobs.append(job)
+                awaiting_jobs += 1
+                if awaiting_jobs >= batch_size:
+                    self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
+                    awaiting_jobs = 0
+            if len(jobs) > 0:
+                self.push_to_neo(awaiting_jobs, is_nodes, jobs, key)
+
     def push_to_neo(self, awaiting_jobs, is_nodes, jobs, key):
         key_parts = self.parse_redis_key(key=key)
         self.log.info(f'Placing {awaiting_jobs} {"nodes" if is_nodes else "edges"} into Neo4j')

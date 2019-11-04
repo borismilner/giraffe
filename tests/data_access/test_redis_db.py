@@ -61,3 +61,13 @@ def test_pull_in_batches():
     nodes_iterator = db.pull_set_members_in_batches(key_pattern=f'{config.test_job_name}:{config.nodes_ingestion_operation}:{config.test_labels[0]}', batch_size=500)
     nodes = [node for node in nodes_iterator]
     assert len(nodes) == len(commons.test_nodes)
+
+
+def test_pull_batch_values_by_keys():
+    db: RedisDB = commons.redis_db
+    how_many_keys = 1000
+    for i in range(0, how_many_keys):
+        db.driver.set(name=f'Person-{i}', value=f'This is person-{i}')
+
+    values = db.pull_batch_values_by_keys(keys=[f'Person-{i}' for i in range(0, how_many_keys)])
+    assert len(values) == how_many_keys

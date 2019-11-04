@@ -44,7 +44,14 @@ class RedisDB(object):
         batch_iterator = r.sscan_iter(name=f'{key}', count=batch_size)
         return batch_iterator
 
-    def get_key_by_pattern(self, key_pattern: str):
+    def pull_batch_values_by_keys(self, keys: List):
+        batch_values = self.driver.mget(keys=keys)
+        return batch_values
+
+    def get_key_by_pattern(self, key_pattern: str, return_list: bool = True):
         r: Redis = self.driver
-        found_keys: List[str] = [key for key in r.keys(pattern=key_pattern)]
-        return found_keys
+        if return_list:
+            found_keys: List[str] = [key for key in r.keys(pattern=key_pattern)]
+            return found_keys
+        else:
+            return r.keys(pattern=key_pattern)
