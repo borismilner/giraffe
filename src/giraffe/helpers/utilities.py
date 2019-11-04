@@ -1,5 +1,6 @@
+import itertools
 import time
-from typing import List
+from typing import List, Iterable
 
 
 def list_as_chunks(the_list: List, chunk_size: int):
@@ -7,6 +8,15 @@ def list_as_chunks(the_list: List, chunk_size: int):
     return (the_list[start_slice:start_slice + chunk_size] for start_slice in range(0,
                                                                                     length_of_iterable,
                                                                                     chunk_size))
+
+
+def iterable_in_chunks(iterable: Iterable, chunk_size: int):
+    it = iter(iterable)
+    while True:
+        chunk = list(itertools.islice(it, chunk_size))
+        if not chunk:
+            return
+        yield chunk
 
 
 class Timer:
