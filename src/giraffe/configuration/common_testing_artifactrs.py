@@ -95,9 +95,9 @@ def init_test_data():
 test_nodes = [
     {
         config.uid_property: i,
-        'name': f'person{i}',
+        'name': f'{config.test_labels[0]}{i}',
         'age': i,
-        'email': f'person{i}@gmail.com'
+        'email': f'{config.test_labels[0]}{i}@gmail.com'
     }
     for i in range(0, config.number_of_test_nodes)
 ]

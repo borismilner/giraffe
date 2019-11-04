@@ -105,7 +105,7 @@ class IngestionManager:
                 # Planting the key inside the value-body
                 for index, key in enumerate(keys):
                     if not element_key:
-                        element_key = ''.join(key.split(self.config.key_separator)[0:-1])
+                        element_key = ':'.join(key.split(self.config.key_separator)[0:-1])
                     jobs[index][self.config.uid_property] = key.split(self.config.key_separator)[-1]
 
                 self.push_to_neo(awaiting_jobs=len(jobs), is_nodes=is_nodes, jobs=jobs, key=element_key, needs_eval=False)
