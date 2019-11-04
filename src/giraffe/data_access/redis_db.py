@@ -48,6 +48,13 @@ class RedisDB(object):
         batch_values = self.driver.mget(keys=keys)
         return batch_values
 
+    def pull_batch_hashes_by_keys(self, keys: List):
+        pipe = self.driver.pipeline()
+        for key in keys:
+            pipe.hgetall(name=key)
+        result = pipe.execute()
+        return result
+
     def get_key_by_pattern(self, key_pattern: str, return_list: bool = True):
         r: Redis = self.driver
         if return_list:
