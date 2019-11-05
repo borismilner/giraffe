@@ -1,20 +1,18 @@
 from abc import ABC, abstractmethod
-from giraffe.data_access.formats.progress_report_format import ProgressReport
-from giraffe.data_access.formats.status_report_format import StatusReport
-
 
 # A report handler may write report to different targets
 # E.g.: Relational Database, Elasticsearch, Redis, ....
+import giraffe
 
 
 class ReportHandler(ABC):
 
     @abstractmethod
-    def progress_report(self, progress_report: ProgressReport) -> None:
+    def progress_report(self, pr) -> None:
         pass
 
     @abstractmethod
-    def status_report(self, status_report: StatusReport) -> None:
+    def status_report(self, status_report) -> None:
         pass
 
     @abstractmethod

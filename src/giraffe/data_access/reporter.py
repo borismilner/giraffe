@@ -9,16 +9,14 @@ from giraffe.helpers import log_helper
 
 
 class ProgressLogger:
-    class Status(Enum):
-        PENDING = 0
-        BEGAN = 1
-        FINISHED = 2
-        ERROR = 666
 
     def __init__(self, handlers: List[ReportHandler]):
         self.map_job_id_to_name = {}
         self.handlers = handlers
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
+
+    def get_job_name(self, job_id: str):
+        return self.map_job_id_to_name[job_id]
 
     def register_job_name_for_job_id(self, job_id: str, job_name: str):
         if job_id in self.map_job_id_to_name:
