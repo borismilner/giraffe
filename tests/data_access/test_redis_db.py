@@ -1,4 +1,5 @@
 import itertools
+from math import ceil
 
 import giraffe.configuration.common_testing_artifactrs as commons
 import pytest
@@ -71,3 +72,19 @@ def test_pull_batch_values_by_keys():
 
     values = db.pull_batch_values_by_keys(keys=[f'Person-{i}' for i in range(0, how_many_keys)])
     assert len(values) == how_many_keys
+
+
+def test_pull_batch_from_stream():
+    r: Redis = commons.redis_driver
+    db: RedisDB = commons.redis_db
+    r.flushall()
+    for node in commons.test_nodes:
+        r.xadd(name=config.test_redis_stream_name, fields=node)
+    batch_size = 100
+    received_entities = []
+    number_of_batches = 0
+    for batch in db.pull_batch_from_stream(stream_name=config.test_redis_stream_name, batch_size=batch_size):
+        number_of_batches += 1
+        received_entities.extend(batch[0][1])
+    assert len(received_entities) == config.number_of_test_nodes
+    assert number_of_batches == ceil(config.number_of_test_nodes/batch_size)

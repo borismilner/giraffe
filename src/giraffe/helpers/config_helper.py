@@ -54,6 +54,7 @@ class ConfigHelper:
             self.redis_username = self.config[redis_section]['USERNAME']
             self.redis_password = self.config[redis_section]['PASSWORD']
             self.redis_port = self.config[redis_section]['PORT']
+            self.redis_stream_milliseconds_block = self.config[redis_section]['STREAM_BLOCK_MILLISECONDS']
         else:
             self.log.warning(f'No configuration found for section {redis_section}')
 
@@ -68,6 +69,7 @@ class ConfigHelper:
             self.test_job_name = self.config[testing_section]['test_request_name']
             self.test_elasticsearch_index = self.config[testing_section]['test_elasticsearch_index']
             self.test_redis_table_prefix = self.config[testing_section]['test_redis_table_prefix']
+            self.test_redis_stream_name = self.config[testing_section]['test_redis_stream_name']
 
         else:
             self.log.warning(f'No configuration found for section {testing_section}')

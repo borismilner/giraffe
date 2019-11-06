@@ -14,6 +14,7 @@ class RedisDB(object):
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.log.debug(f'Initialising redis driver.')
         self.driver: Redis = redis.StrictRedis(host=config.redis_host_address, port=config.redis_port, decode_responses=True)
+        self.config = config
         atexit.register(self.driver.close)
 
     def __enter__(self):
@@ -62,3 +63,13 @@ class RedisDB(object):
             return found_keys
         else:
             return r.keys(pattern=key_pattern)
+
+    def pull_batch_from_stream(self, stream_name: str, batch_size: int = 50_000):
+        r: Redis = self.driver
+        milliseconds_to_block = int(self.config.redis_stream_milliseconds_block)
+        self.log.info(f'Listening on stream named {stream_name}, pulling in batches pf {batch_size} [end of stream within {milliseconds_to_block / 1000} sec.]')
+        batch = r.xread(streams={stream_name: 0}, count=batch_size, block=milliseconds_to_block)
+        while batch:
+            yield batch
+            bookmark = batch[0][1][-1][0]
+            batch = r.xread(streams={stream_name: bookmark}, count=batch_size, block=milliseconds_to_block)
