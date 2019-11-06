@@ -67,7 +67,7 @@ class RedisDB(object):
     def pull_batch_from_stream(self, stream_name: str, batch_size: int = 50_000):
         r: Redis = self.driver
         milliseconds_to_block = int(self.config.redis_stream_milliseconds_block)
-        self.log.info(f'Listening on stream named {stream_name}, pulling in batches pf {batch_size} [end of stream within {milliseconds_to_block / 1000} sec.]')
+        self.log.info(f'Listening on a stream named {stream_name}, pulling in batches pf {batch_size} [end of stream within {milliseconds_to_block / 1000} sec.]')
         batch = r.xread(streams={stream_name: 0}, count=batch_size, block=milliseconds_to_block)
         while batch:
             yield batch
