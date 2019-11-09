@@ -110,6 +110,7 @@ class NeoDB(object):
     def merge_edges(self, edges: List, from_label: str, to_label: str, edge_type: str = None) -> BoltStatementResultSummary:
         if edge_type is None:
             edge_type = edges[0][self.config.edge_type_property]
+        # TODO: Consider adding ON CREATE & ON MATCH after final MERGE
         query = f"""
         UNWIND $edges as edge
         MATCH (fromNode:{from_label}) WHERE fromNode.{self.config.uid_property} = edge.{self.config.from_uid_property}
