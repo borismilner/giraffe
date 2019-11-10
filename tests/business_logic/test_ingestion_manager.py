@@ -1,3 +1,7 @@
+import time
+import pytest
+from multiprocessing import Process
+from giraffe.helpers import log_helper
 from giraffe.helpers.spark_helper import SparkHelper
 from pyspark.sql import DataFrame
 from redis import Redis
@@ -6,6 +10,22 @@ import giraffe.configuration.common_testing_artifactrs as commons
 from giraffe.business_logic.ingestion_manger import IngestionManager
 
 config = ConfigHelper()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def init_and_finalize():
+    commons.log = log_helper.get_logger(logger_name='testing')
+    # commons.neo = neo_db.NeoDB()
+    # commons.delete_neo_test_data()
+    yield  # Commands beyond this line will be called after the last test
+    # commons.delete_neo_test_data()
+
+
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    # commons.init_test_data()
+    yield
+    # commons.delete_neo_test_data()
 
 
 def test_parse_redis_key():
@@ -90,3 +110,71 @@ def test_process_spark_redis_table():
     query = f'MATCH (:{commons.config.test_labels[0]}) RETURN COUNT(*) AS count'
     count = commons.neo.pull_query(query=query).value()[0]
     assert count == config.number_of_test_nodes
+
+
+def test_parallel_ingestion_managers():
+    # commons.delete_neo_test_data()
+    # im = commons.IngestionManager()
+
+    num_records = 100_000
+    batch_size = 50_000
+    spark_helper = SparkHelper()
+    sc = spark_helper.get_spark_session().sparkContext
+
+    # .option("table", config.test_redis_table_prefix) \
+    columns = ['_uid', 'name', 'age', 'email']
+    for batch in range(1, num_records, batch_size):
+        data = [(i, f'Person-{i}', i, f'Person-{i}@gmail.com') for i in range(batch, batch + batch_size)]
+        df = sc.parallelize(data).toDF(columns)
+        df.write.format("org.apache.spark.sql.redis") \
+            .option("table", "second:nodes_ingest") \
+            .option("key.column", '_uid') \
+            .mode('Append') \
+            .save()
+
+
+def prepare_redis():
+    num_records = 100_000
+    batch_size = 50_000
+    spark_helper = SparkHelper()
+    sc = spark_helper.get_spark_session().sparkContext
+
+    for key_name in ('first', 'second'):
+        columns = ['_uid', 'name', 'age', 'email']
+        for batch in range(1, num_records, batch_size):
+            data = [(i, f'Person-{i}', i, f'Person-{i}@gmail.com') for i in range(batch, batch + batch_size)]
+            df = sc.parallelize(data).toDF(columns)
+            df.write.format("org.apache.spark.sql.redis") \
+                .option("table", f"{key_name}:nodes_ingest:Person") \
+                .option("key.column", '_uid') \
+                .mode('Append') \
+                .save()
+
+
+def test_single_vs_multiple_redis_consumers():
+    log = commons.log
+    log.info('Deleting redis content.')
+    commons.delete_redis_test_data()
+    log.info('Deleting neo content.')
+    commons.delete_neo_test_data()
+    log.info('Populating redis.')
+    prepare_redis()
+    log.info('Done populating.')
+
+    im = IngestionManager()
+    t = time.time()
+    im.process_spark_redis_table(job_name='first', batch_size=10_000)
+    im.process_spark_redis_table(job_name='second', batch_size=10_000)
+    one_by_one = time.time() - t
+    log.info(f'One by one: {one_by_one}.')
+
+    first = Process(target=im.process_spark_redis_table, args=('first', 10_000))
+    second = Process(target=im.process_spark_redis_table, args=('second', 10_000))
+
+    t = time.time()
+    first.start()
+    second.start()
+    first.join()
+    second.join()
+    two_in_parallel = time.time() - t
+    log.info(f'Two in parallel: {two_in_parallel}.')
