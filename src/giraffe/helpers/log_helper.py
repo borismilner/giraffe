@@ -54,8 +54,10 @@ def handle_unhandled_exception(exc_type, exc_value, exc_traceback):
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
 
 
+# noinspection PyUnusedLocal
 def admin(self, msg, *args, **kwargs):
     global fluentd_logger
+    # noinspection PyProtectedMember
     fluentd_logger._log(ADMINISTRATIVE_LEVEL, msg, args, **kwargs)
 
 
