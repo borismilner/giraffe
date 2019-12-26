@@ -1,8 +1,14 @@
-pyspark
+psutil
+fluent
 findspark
-nox
-neobolt
+flask
+fluent-logger
 neo4j
+neobolt
+nox
 py2neo
+pyspark
 pytest
 redis
+requests
+waitress

@@ -1,7 +1,7 @@
-from giraffe.data_access.formats.progress_report_format import ProgressReport
+from giraffe.data_access.db_logger import DbLogger
+from giraffe.data_access.report_handlers.postgres_handler import PostgresHandler
+from giraffe.data_access.report_handlers.sqlite_handler import AdminDbEntry
 from giraffe.data_access.report_handlers.sqlite_handler import SqliteHandler
-from giraffe.data_access.formats.status import Status
-from giraffe.data_access.reporter import ProgressLogger
 
 
 def test_sqlite_reporter():
@@ -11,14 +11,32 @@ def test_sqlite_reporter():
     sqlite_handler = SqliteHandler(db_file_path='meta_info.db')
     sqlite_handler.create_structures_if_not_exists()
 
-    p_logger = ProgressLogger(handlers=[sqlite_handler])
-    p_logger.register_job_name_for_job_id(job_name=current_job_name, job_id=current_job_id)
+    db_logger = DbLogger(handlers=[sqlite_handler])
+    db_logger.register_job_name_for_job_id(job_name=current_job_name, job_id=current_job_id)
 
     for i in range(0, 100):
-        progress_report = ProgressReport(job_id=current_job_id,
-                                         job_name=p_logger.get_job_name(current_job_id),
-                                         stage='Reading Table',
-                                         details=f'Collecting {i} rows',
-                                         status=Status.FINISHED)
+        db_entry = AdminDbEntry(job_id=current_job_id,
+                                job_name=db_logger.get_job_name(current_job_id),
+                                category='Reading Table',
+                                int_value=i,
+                                string_value=f'Finished with {i} rows.')
 
-        p_logger.progress(progress_report=progress_report)
+        db_logger.add_entry(entry=db_entry)
+
+
+def test_postgres_reporter():
+    current_job_name = 'MyNodes'
+    current_job_id = '123'
+    postgres_handler = PostgresHandler()
+    postgres_handler.create_structures_if_not_exists()
+    db_logger = DbLogger(handlers=[postgres_handler])
+    db_logger.register_job_name_for_job_id(job_name=current_job_name, job_id=current_job_id)
+
+    for i in range(0, 100):
+        progress_report = AdminDbEntry(job_id=current_job_id,
+                                       job_name=db_logger.get_job_name(current_job_id),
+                                       category='Reading Table',
+                                       int_value=i,
+                                       string_value=f'Finished with {i} rows.')
+
+        db_logger.add_entry(entry=progress_report)

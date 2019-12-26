@@ -1,17 +1,18 @@
-import os
 import configparser
+import os
+from typing import Dict
 
-from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
+from giraffe.helpers.utilities import validate_is_file
 
 
 class ConfigHelper:
     default_configurations_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'configuration/defaults.ini'))
 
     def __init__(self, configurations_ini_file_path: str = default_configurations_file):
-        self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
-        if not os.path.isfile(configurations_ini_file_path):
-            raise TechnicalError(f'{configurations_ini_file_path} does not exist.')
+        self.log = log_helper.get_logger(logger_name=__name__)
+
+        validate_is_file(file_path=configurations_ini_file_path)
 
         neo4j_section = 'NEO4J'
         redis_section = 'REDIS'
@@ -70,6 +71,7 @@ class ConfigHelper:
             self.test_elasticsearch_index = self.config[testing_section]['test_elasticsearch_index']
             self.test_redis_table_prefix = self.config[testing_section]['test_redis_table_prefix']
             self.test_redis_stream_name = self.config[testing_section]['test_redis_stream_name']
+            self.test_front_desk_address = self.config[testing_section]['test_front_desk_address']
 
         else:
             self.log.warning(f'No configuration found for section {testing_section}')
@@ -84,6 +86,29 @@ class ConfigHelper:
             self.to_uid_property = self.config[giraffe_section]['to_uid_property_name']
             self.edge_type_property = self.config[giraffe_section]['edge_type_property_name']
             self.deletion_batch_size = self.config[giraffe_section]['deletion_batch_size']
+            self.model_vertex_id_prop_name = self.config[giraffe_section]['model_vertex_id_prop_name']
+            self.model_edge_id_prop_name = self.config[giraffe_section]['model_edge_id_prop_name']
+            self.edge_to_identifier_name = self.config[giraffe_section]['edge_to_identifier_name']
+            self.inception_models_rest_address = self.config[giraffe_section]['inception_models_rest_address']
+            self.inception_data_sources_rest_address = self.config[giraffe_section]['inception_data_sources_rest_address']
+            self.data_source_parts_separator = self.config[giraffe_section]['data_source_parts_separator']
+            self.expected_number_of_source_parts = int(self.config[giraffe_section]['expected_number_of_source_parts'])
+            self.front_desk_port = int(self.config[giraffe_section]['front_desk_port'])
+            self.redis_stream_name = self.config[giraffe_section]['redis_stream_name']
+            self.ingestion_endpoint = self.config[giraffe_section]['ingestion_endpoint'].strip()
+            self.redis_get_all_endpoint = self.config[giraffe_section]['redis_get_all_endpoint'].strip()
+            self.request_mandatory_field_names = eval(self.config[giraffe_section]['request_type_mandatory_field_name'])
+            self.logs_storage_folder = self.config[giraffe_section]['logs_storage_folder']
+            self.admin_db_table_name = self.config[giraffe_section]['admin_db_table_name']
+            self.required_request_fields: Dict[str, Dict] = eval(self.config[giraffe_section]['required_request_fields'])
+            self.hash_uid_column = eval(self.config[giraffe_section]['hash_uid_column'])
+            self.front_desk_ip = self.config[giraffe_section]['front_desk_ip']
+            self.execution_environment = self.config[giraffe_section]['execution_environment']
+            self.logs_structured_prefix = self.config[giraffe_section]['logs_structured_prefix']
+            self.logs_fluentd_host = self.config[giraffe_section]['logs_fluentd_host']
+            self.logs_fluentd_port = int(self.config[giraffe_section]['logs_fluentd_port'])
+            self.thread_pool_size = int(self.config[giraffe_section]['thread_pool_size'])
+            self.property_names_to_index = eval(self.config[giraffe_section]['property_names_to_index'])
         else:
             self.log.warning(f'No configuration found for section {giraffe_section}')
 
@@ -99,3 +124,17 @@ class ConfigHelper:
             self.es_host_address = self.config[elastic_section]['HOST']
         else:
             self.log.warning(f'No configuration found for section {elastic_section}')
+
+
+config = None
+
+
+def get_config(configurations_ini_file_path=None) -> ConfigHelper:
+    global config
+    if config is not None:
+        return config
+    if configurations_ini_file_path is None:
+        config = ConfigHelper()
+    else:
+        config = ConfigHelper(configurations_ini_file_path=configurations_ini_file_path)
+    return config

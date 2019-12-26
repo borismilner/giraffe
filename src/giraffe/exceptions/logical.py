@@ -15,3 +15,27 @@ class UnexpectedOperation(GiraffeException):
 
 class PropertyNotIndexedError(GiraffeException):
     pass
+
+
+class ComputeDataFrameFailure(GiraffeException):
+    pass
+
+
+class NoSuchFileError(GiraffeException):
+    pass
+
+
+class UnexpectedResult(GiraffeException):
+    pass
+
+
+class TranslationError(GiraffeException):
+    pass
+
+
+class ParseModelFailure(GiraffeException):
+    pass
+
+
+class TransformerError(GiraffeException):
+    pass

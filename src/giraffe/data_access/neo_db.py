@@ -1,28 +1,36 @@
 import atexit
-from typing import List, Union, Dict
-from giraffe.exceptions.logical import QuerySyntaxError, PropertyNotIndexedError
-from giraffe.helpers.config_helper import ConfigHelper
-from neo4j import GraphDatabase, BoltStatementResultSummary, BoltStatementResult
-from neobolt.exceptions import ServiceUnavailable, CypherSyntaxError
+import threading
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 
+from giraffe.exceptions.logical import PropertyNotIndexedError
+from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.exceptions.technical import TechnicalError
+from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
+from neo4j import BoltStatementResult
+from neo4j import BoltStatementResultSummary
+from neo4j import GraphDatabase
+from neobolt.exceptions import CypherSyntaxError
+from neobolt.exceptions import ServiceUnavailable
 from py2neo import Graph
 
 
 # noinspection SqlDialectInspection,SqlNoDataSourceInspection
 class NeoDB(object):
 
-    def __init__(self, config: ConfigHelper = ConfigHelper()):
+    def __init__(self, config=config_helper.get_config()):
         self.config = config
-        self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
+        self.log = log_helper.get_logger(logger_name=f'{self.__class__.__name__}_{threading.current_thread().name}')
 
         # Connecting py2neo
 
         self.graph = Graph(
-            uri=config.neo_host_address,
-            user=config.neo_username,
-            password=config.neo_password
+                uri=config.neo_host_address,
+                user=config.neo_username,
+                password=config.neo_password
         )
 
         # Connecting official bolt-driver
@@ -38,6 +46,8 @@ class NeoDB(object):
 
         atexit.register(self._driver.close)
 
+        self.indices_cache_label_property: List[Tuple[str, str]] = []
+
     def __enter__(self):
         return self
 
@@ -45,9 +55,15 @@ class NeoDB(object):
         self._driver.close()
 
     def is_index_exists(self, label: str, property_name: str):
+        label_and_property = (label, property_name)
+        if label_and_property in self.indices_cache_label_property:
+            return True
         query = f'CALL db.indexes() YIELD tokenNames, properties WHERE "{label}" IN tokenNames AND "{property_name}" IN properties RETURN count(*) AS count'
         count = self.pull_query(query=query).value()[0]
-        return count > 0
+        is_index_exist = count > 0
+        if is_index_exist:
+            self.indices_cache_label_property.append(label_and_property)
+        return is_index_exist
 
     def create_index_if_not_exists(self, label: str, property_name: str) -> Union[BoltStatementResultSummary, None]:
 
@@ -66,6 +82,9 @@ class NeoDB(object):
         summary: BoltStatementResultSummary = self.run_query(query=query)
         indexes_removed = summary.counters.indexes_removed
         self.log.debug(f'Dropped {indexes_removed} index: {label}.{property_name}]')
+        label_and_property = (label, property_name)
+        if label_and_property in self.indices_cache_label_property:
+            self.indices_cache_label_property.remove(label_and_property)
         return summary
 
     def run_query(self, query: str, **parameters) -> BoltStatementResultSummary:
@@ -96,12 +115,17 @@ class NeoDB(object):
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
 
-        self.create_index_if_not_exists(label=label, property_name=self.config.uid_property)
+        for property_name in self.config.property_names_to_index['*']:
+            self.create_index_if_not_exists(label=label, property_name=property_name)
+        if label in self.config.property_names_to_index:
+            for property_name in self.config.property_names_to_index[label]:
+                self.create_index_if_not_exists(label=label, property_name=property_name)
+
         query = f"""
         UNWIND $nodes as node
         MERGE (p:{label}{{{self.config.uid_property}: node.{self.config.uid_property}}})
         ON CREATE SET p = node, p._created = datetime()
-        ON MATCH SET p += node, p._last_seen = datetime()
+        ON MATCH SET p += node, p._last_updated = datetime()
         """
         summary = self.run_query(query=query, nodes=nodes)
         return summary
@@ -114,19 +138,24 @@ class NeoDB(object):
         query = f"""
         UNWIND $edges as edge
         MATCH (fromNode:{from_label}) WHERE fromNode.{self.config.uid_property} = edge.{self.config.from_uid_property}
-        MATCH (toNode:{to_label}) WHERE toNode.{self.config.uid_property} = edge.{self.config.from_uid_property}
+        MATCH (toNode:{to_label}) WHERE toNode.{self.config.uid_property} = edge.{self.config.to_uid_property}
         MERGE (fromNode)-[r:{edge_type}]->(toNode)
         """
 
         summary = self.run_query(query=query, edges=edges)
         return summary
 
-    def delete_nodes_by_property(self, label: str, property_name: str, property_value: str) -> Dict[str, int]:
-        if not self.is_index_exists(label=label, property_name=property_name):
-            raise PropertyNotIndexedError(f'Property {property_name} must be indexed in-order to delete nodes by it.')
+    def delete_nodes_by_properties(self, label: str, property_name_value_tuples: List[Tuple[str, str]]) -> Dict[str, int]:
+
+        for name_value in property_name_value_tuples:
+            property_name = name_value[0]
+            if not self.is_index_exists(label=label, property_name=property_name):
+                raise PropertyNotIndexedError(f'Property {property_name} must be indexed in-order to delete nodes by it.')
+
+        conditions_string = ' and '.join([f"n.{name_value[0]}='{name_value[1]}'" for name_value in property_name_value_tuples])
 
         query = f"""
-        call apoc.periodic.iterate("MATCH (n:{label}) where n.{property_name}={property_value} return n", "DETACH DELETE n", {{batchSize:{int(self.config.deletion_batch_size)}}})
+        call apoc.periodic.iterate("MATCH (n:{label}) where {conditions_string} return n", "DETACH DELETE n", {{batchSize:{int(self.config.deletion_batch_size)}}})
         yield batches, total return batches, total
         """
 

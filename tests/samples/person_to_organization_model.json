@@ -1,0 +1,120 @@
+{
+    "vertices": [
+        {
+            "label": "Person",
+            "properties": {
+                "attr": [
+                    "@age",
+                    "@name"
+                ],
+              "id": "@pid",
+              "_table": "t1"
+            },
+            "id": {
+                "fields": [
+                    "per",
+                    "@age",
+                    "@name",
+                  "@pid",
+                  "_table"
+                ],
+                "delimiter": "~",
+                "readOnlyFields": [
+                    "per"
+                ]
+            },
+            "edges": [
+                {
+                    "label": "WORKS",
+                    "id": {
+                        "fields": [
+                            "WHAT_AM_I",
+                            {
+                                "fields": [
+                                    "@org_name",
+                                  "@org_location",
+                                  "_table"
+                                ],
+                                "delimiter": "~",
+                                "readOnlyFields": []
+                            },
+                            "edge"
+                        ],
+                        "delimiter": "~"
+                    },
+                    "vertex": {},
+                    "direction": "OUT"
+                },
+                {
+                    "label": "Identifies",
+                    "id": {
+                        "fields": [
+                            "WHAT_AM_I",
+                            {
+                                "fields": [
+                                    "ID",
+                                    "@pid"
+                                ],
+                                "delimiter": "~",
+                                "readOnlyFields": [
+                                    "ID"
+                                ]
+                            },
+                            "edge"
+                        ],
+                        "delimiter": "~"
+                    },
+                    "vertex": {
+                        "id": "@pid",
+                        "label": "ID"
+                    },
+                    "direction": "IN"
+                }
+            ]
+        },
+        {
+            "label": "Organization",
+            "properties": {
+                "name": "@org_name",
+              "location": "@org_location",
+              "_table": "t1"
+            },
+            "id": {
+                "fields": [
+                    "@org_name",
+                  "@org_location",
+                  "_table"
+                ],
+                "delimiter": "~",
+                "readOnlyFields": []
+            },
+            "edges": [
+                {
+                    "label": "Identifies",
+                    "id": {
+                        "fields": [
+                            "WHAT_AM_I",
+                            {
+                                "fields": [
+                                    "ORG",
+                                    "@org_name"
+                                ],
+                                "delimiter": "~",
+                                "readOnlyFields": [
+                                    "ORG"
+                                ]
+                            },
+                            "edge"
+                        ],
+                        "delimiter": "~"
+                    },
+                    "vertex": {
+                        "id": "@org_name",
+                        "label": "ORG"
+                    },
+                    "direction": "IN"
+                }
+            ]
+        }
+    ]
+}

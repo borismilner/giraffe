@@ -5,7 +5,7 @@ folders_to_delete = [
     'giraffe_logs',
     '.nox',
     '.pytest_cache',
-    'giraffe.egg-info'
+    'Giraffe.egg-info'
 ]
 
 if __name__ == '__main__':

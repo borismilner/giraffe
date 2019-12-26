@@ -1,6 +1,11 @@
 import itertools
+import os
 import time
-from typing import List, Iterable
+from typing import Iterable
+from typing import List
+
+import psutil
+from giraffe.exceptions.logical import NoSuchFileError
 
 
 def list_as_chunks(the_list: List, chunk_size: int):
@@ -17,6 +22,25 @@ def iterable_in_chunks(iterable: Iterable, chunk_size: int):
         if not chunk:
             return
         yield chunk
+
+
+def flatten_list(input_list):
+    if not input_list:
+        return input_list
+    if isinstance(input_list[0], list):
+        return flatten_list(input_list[0]) + flatten_list(input_list[1:])
+    return input_list[:1] + flatten_list(input_list[1:])
+
+
+def validate_is_file(file_path: str, error_message: str = 'File does not exist.'):
+    if not os.path.isfile(file_path):
+        raise NoSuchFileError(f'{error_message}: {file_path}')
+
+
+def get_memory_usage_megabytes() -> float:
+    process = psutil.Process(os.getpid())
+    used_memory_mb = round(process.memory_info().rss / 1e6, 2)
+    return used_memory_mb
 
 
 class Timer:

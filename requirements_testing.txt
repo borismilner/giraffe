@@ -1,0 +1,14 @@
+elasticsearch
+findspark
+flask
+fluent-logger
+neo4j
+neobolt
+nox
+pandas
+py2neo
+pyspark
+pytest
+redis
+requests
+waitress

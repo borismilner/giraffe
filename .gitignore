@@ -1,5 +1,7 @@
 .tox/
 .nox/
+.idea/
+.vscode/
 .env
 .venv
 .pytest_cache/
@@ -9,4 +11,5 @@ giraffe_logs/
 target/
 sonarlint/
 *.log
+*.db
 *.py[cod]

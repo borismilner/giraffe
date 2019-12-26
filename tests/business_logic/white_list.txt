@@ -1,0 +1,1 @@
+MY-SCHEMA~elasticsearch~test_index
