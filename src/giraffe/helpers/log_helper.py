@@ -27,6 +27,7 @@ structured_log_format = {
 fluentd_handler = fluent_handler.FluentHandler('zodiac.logs',
                                                host='localhost',
                                                port=2104)
+# noinspection PyTypeChecker
 formatter = fluent_handler.FluentRecordFormatter(structured_log_format)
 fluentd_handler.setFormatter(formatter)
 fluentd_handler.setLevel(ADMINISTRATIVE_LEVEL)
