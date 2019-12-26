@@ -47,7 +47,7 @@ def test_integration_without_timing(data_frame_and_models, logger: Logger, spark
 
         im = ingestion_manger.IngestionManager(config_helper=config_helper)
         im.process_redis_content(key_prefix=streaming_id, request_id='unit-testing')
-        r = redis_db.get_driver()
+        # r = redis_db.get_driver()
         # r.flushall()
 
     logger.info('Done.')
