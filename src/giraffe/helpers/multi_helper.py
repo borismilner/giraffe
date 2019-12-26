@@ -14,9 +14,4 @@ class MultiHelper:
         self.futures: List[Future] = []
 
     def run_in_parallel_threads(self, function, *args, **kwargs):
-        self.futures.append(self.thread_executor.submit(function, *args, **kwargs))
-        for future in self.futures:
-            # TODO: Add callbacks and other goodies future offers
-            pass
-
-        # TODO: handle futures when they return, exception, etc...
+        self.thread_executor.submit(function, *args, **kwargs)
