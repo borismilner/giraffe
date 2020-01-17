@@ -10,6 +10,7 @@ from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
+from giraffe.monitoring.progress_monitor import ProgressMonitor
 from neo4j import BoltStatementResult
 from neo4j import BoltStatementResultSummary
 from neo4j import GraphDatabase
@@ -21,8 +22,9 @@ from py2neo import Graph
 # noinspection SqlDialectInspection,SqlNoDataSourceInspection
 class NeoDB(object):
 
-    def __init__(self, config=config_helper.get_config()):
+    def __init__(self, progress_monitor: ProgressMonitor, config=config_helper.get_config()):
         self.config = config
+        self.progress_monitor = progress_monitor
         self.log = log_helper.get_logger(logger_name=f'{self.__class__.__name__}_{threading.current_thread().name}')
 
         # Connecting py2neo
@@ -110,7 +112,7 @@ class NeoDB(object):
                 return result
 
     # NOTE: since UNWIND won't allow dynamic labels - all nodes in the batch must have the same label.
-    def merge_nodes(self, nodes: List, label: str = None) -> BoltStatementResultSummary:
+    def merge_nodes(self, nodes: List, request_id: str, label: str = None) -> BoltStatementResultSummary:
         # Notice the ON MATCH clause - it will add/update missing properties if there are such
         # Perhaps we don't care about adding and would want to simply overwrite the existing one with `=`
         # TODO: Consider saving date-time as epoch seconds/milliseconds
@@ -127,11 +129,17 @@ class NeoDB(object):
         ON CREATE SET p = node, p._created = datetime()
         ON MATCH SET p += node, p._last_updated = datetime()
         """
+        self.log.debug(f'Pushing into neo4j {len(nodes)} nodes.')
         summary = self.run_query(query=query, nodes=nodes)
+        self.log.debug(f'Done pushing: {summary.counters}')
+        self.progress_monitor.merging_into_neo4j(request_id=request_id,
+                                                 element_type='NODES',
+                                                 element_properties=str(label),
+                                                 summary=summary)
         return summary
 
     # NOTE: while it is possible to match without the from/to labels - it is too slow.
-    def merge_edges(self, edges: List, from_label: str, to_label: str, edge_type: str = None) -> BoltStatementResultSummary:
+    def merge_edges(self, edges: List, from_label: str, to_label: str, request_id: str, edge_type: str = None) -> BoltStatementResultSummary:
         if edge_type is None:
             edge_type = edges[0][self.config.edge_type_property]
         # TODO: Consider adding ON CREATE & ON MATCH after final MERGE
@@ -142,7 +150,13 @@ class NeoDB(object):
         MERGE (fromNode)-[r:{edge_type}]->(toNode)
         """
 
+        self.log.debug(f'Pushing into neo4j {len(edges)} edges of type {edge_type}.')
         summary = self.run_query(query=query, edges=edges)
+        self.log.debug(f'Done pushing: {summary.counters}')
+        self.progress_monitor.merging_into_neo4j(request_id=request_id,
+                                                 element_type='NODES',
+                                                 element_properties=f'{edge_type}_{from_label}_{to_label}',
+                                                 summary=summary)
         return summary
 
     def delete_nodes_by_properties(self, label: str, property_name_value_tuples: List[Tuple[str, str]]) -> Dict[str, int]:

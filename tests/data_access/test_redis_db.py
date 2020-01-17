@@ -66,6 +66,7 @@ def test_pull_batch_values_by_keys(redis_db):
     assert len(values) == how_many_keys
 
 
+# NOTE: Works only with redis 5.0+
 def test_pull_batch_from_stream(redis_db, redis_driver, config_helper, nodes):
     r: Redis = redis_driver
     db: RedisDB = redis_db

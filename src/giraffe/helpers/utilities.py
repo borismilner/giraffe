@@ -1,8 +1,11 @@
 import itertools
 import os
 import time
+import json
 from typing import Iterable
 from typing import List
+import datetime
+from typing import NamedTuple
 
 import psutil
 from giraffe.exceptions.logical import NoSuchFileError
@@ -15,10 +18,10 @@ def list_as_chunks(the_list: List, chunk_size: int):
                                                                                     chunk_size))
 
 
-def iterable_in_chunks(iterable: Iterable, chunk_size: int):
+def iterable_in_batches(iterable: Iterable, batch_size: int):
     it = iter(iterable)
     while True:
-        chunk = list(itertools.islice(it, chunk_size))
+        chunk = list(itertools.islice(it, batch_size))
         if not chunk:
             return
         yield chunk
@@ -41,6 +44,10 @@ def get_memory_usage_megabytes() -> float:
     process = psutil.Process(os.getpid())
     used_memory_mb = round(process.memory_info().rss / 1e6, 2)
     return used_memory_mb
+
+
+def timestamp_to_str(timestamp: datetime.datetime) -> str:
+    return timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class Timer:
@@ -66,3 +73,17 @@ class Timer:
         second_elapsed = time.time() - self.__start_time
         self.__reset()
         return second_elapsed
+
+
+def object_to_json(o: object, ignored_keys: Iterable) -> str:
+    as_dict = dict(o.__dict__)
+    for key in ignored_keys:
+        if key in as_dict.keys():
+            del as_dict[key]
+    return json.dumps(as_dict, default=str)
+
+
+def named_tuple_to_dictionary(tup: NamedTuple) -> dict:
+    attributes = dir(tup)
+    dictionary = {attribute: getattr(tup, attribute) for attribute in attributes if not attribute.startswith('_')}
+    return dictionary

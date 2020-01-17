@@ -15,3 +15,4 @@ class Field:
     white_list_content = 'white_list_content'
     execution_environment = 'execution_environment'
     element_type = 'element_type'
+    percent_done = 'percent_done'

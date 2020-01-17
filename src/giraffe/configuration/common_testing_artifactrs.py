@@ -11,6 +11,8 @@ from giraffe.data_access import neo_db
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers.config_helper import ConfigHelper
+from giraffe.helpers.multi_helper import MultiHelper
+from giraffe.monitoring.progress_monitor import ProgressMonitor
 from redis import Redis
 
 config = ConfigHelper()
@@ -28,10 +30,14 @@ def bootstrap():
     global log, neo, redis_db, r, ingestion_manager, elastic_search, queue_for_logging
     queue_for_logging = Manager().Queue(-1)
     log = logging.getLogger('testing_redis')
-    neo = NeoDB(config=ConfigHelper())
-    redis_db = RedisDB(config=ConfigHelper())
+    progress_monitor = ProgressMonitor(config)
+    progress_monitor.task_started(request_id='unit-testing',
+                                  request_type='white_list',
+                                  request_content='nothing')
+    neo = NeoDB(config=config, progress_monitor=progress_monitor)
+    redis_db = RedisDB(config=config)
     r = redis_db.get_driver()
-    ingestion_manager = IngestionManager(config_helper=config)
+    ingestion_manager = IngestionManager(config_helper=config, multi_helper=MultiHelper(config), progress_monitor=ProgressMonitor(config=config))
     elastic_search = Elasticsearch()
 
 
@@ -104,7 +110,7 @@ def init_redis_test_data():
 def init_neo_test_data():
     global neo
     db: neo_db.NeoDB = neo
-    db.merge_nodes(nodes=test_nodes, label=config.test_labels[0])
+    db.merge_nodes(nodes=test_nodes, label=config.test_labels[0], request_id='unit-testing')
     db.create_index_if_not_exists(label=config.test_labels[0], property_name='_uid')
 
 

@@ -13,6 +13,10 @@ class SparkHelper(ABC):
     def get_spark_session(self) -> SparkSession:
         pass
 
+    @abstractmethod
+    def close_spark_session(self) -> None:
+        pass
+
     @staticmethod
     def to_dictionary_string(row):
         row_as_dictionary = {}

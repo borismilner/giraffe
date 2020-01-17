@@ -1,7 +1,9 @@
+import os
 import runpy
 from logging import Logger
 from multiprocessing import Process
 
+import tests.business_logic as bl
 import giraffe.configuration.common_testing_artifactrs as commons
 import pytest
 import requests
@@ -13,6 +15,8 @@ from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper as config
 from giraffe.helpers import log_helper
 from giraffe.helpers.dev_spark_helper import DevSparkHelper
+from giraffe.helpers.multi_helper import MultiHelper
+from giraffe.monitoring.progress_monitor import ProgressMonitor
 
 import tests.utilities.timing_utilities as timing_utils
 
@@ -23,13 +27,33 @@ def config_helper():
 
 
 @pytest.fixture(scope="session")
+def white_list_file_path():
+    white_list_file_path = os.path.join(os.path.dirname(os.path.abspath(bl.__file__)), "white_list.txt")
+    return white_list_file_path
+
+
+@pytest.fixture(scope="session")
+def progress_monitor(config_helper):
+    progress_monitor = ProgressMonitor(config=config_helper)
+    progress_monitor.task_started(request_id='unit-testing',
+                                  request_type='white_list',
+                                  request_content='nothing')
+    return progress_monitor
+
+
+@pytest.fixture(scope="session")
+def multi_helper(config_helper):
+    return MultiHelper(config=config_helper)
+
+
+@pytest.fixture(scope="session")
 def ingestion_endpoint(config_helper):
     return f'{config_helper.test_front_desk_address}:{config_helper.front_desk_port}/ingest'
 
 
 @pytest.fixture(scope="session")
-def neo():
-    return neo_db.NeoDB()
+def neo(progress_monitor):
+    return neo_db.NeoDB(progress_monitor=progress_monitor)
 
 
 @pytest.fixture(scope="session")
@@ -43,8 +67,8 @@ def redis_driver(redis_db):
 
 
 @pytest.fixture(scope="session")
-def ingestion_manager(config_helper, ):
-    return IngestionManager(config_helper=config_helper, )
+def ingestion_manager(config_helper, multi_helper, progress_monitor):
+    return IngestionManager(config_helper=config_helper, multi_helper=multi_helper, progress_monitor=progress_monitor)
 
 
 @pytest.fixture(scope="session")
@@ -108,7 +132,7 @@ def start_front_desk():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def init_and_finalize(redis_db, neo, logger):
+def init_and_finalize(redis_db, neo, logger, config_helper):
     commons.bootstrap()
 
     front_desk_process = Process(target=start_front_desk)

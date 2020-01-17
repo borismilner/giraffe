@@ -94,10 +94,12 @@ class RedisDB(object):
                 self.log.debug(f'Translating and writing to redis: {source_name} [{prefix}] (number of data-frames: {len(data_frames)})')
                 for df in data_frames:
                     ready_for_redis = self.spark_helper.get_string_dict_dataframe(df=df, column_name='graph_node')
-                    ready_for_redis.write.option('redis_host', self.config.redis_host_address) \
+                    ready_for_redis.write \
+                        .option('redis_host', self.config.redis_host_address) \
+                        .option('redis_port', '6379') \
                         .option('redis_column_name', 'graph_node') \
                         .option('redis_set_key', prefix) \
-                        .format(source='milner.boris.redis') \
+                        .format(source='spark.to.redis') \
                         .save()
         except Exception as the_exception:
             self.log.error(the_exception, exc_info=True)

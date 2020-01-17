@@ -1,16 +1,11 @@
-import os
-
 import giraffe.configuration.common_testing_artifactrs as commons
 import pytest
 import requests
 
-import tests.business_logic as bl
 import tests.utilities.timing_utilities as timing_utils
 
-white_list_file_path = os.path.join(os.path.dirname(os.path.abspath(bl.__file__)), "white_list.txt")
 
-
-def test_integration(ingestion_endpoint, config_helper, logger):
+def test_integration(ingestion_endpoint, config_helper, logger, white_list_file_path):
     commons.purge_redis_database()
     commons.purge_neo4j_database()
     request_body = {

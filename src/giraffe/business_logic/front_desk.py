@@ -21,9 +21,12 @@ from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.structured_logging_fields import Field
 from giraffe.helpers.utilities import validate_is_file
+from giraffe.monitoring.progress_monitor import ProgressMonitor
+
 from waitress import serve
 
 coordinator: Coordinator
+progress_monitor: ProgressMonitor
 
 if __name__ == '__main__':
 
@@ -72,12 +75,17 @@ if __name__ == '__main__':
     not_acceptable_error_code = 406
 
     log.debug('Initializing coordinator module.')
+    progress_monitor = ProgressMonitor(config=config)
+    atexit.register(progress_monitor.dump_and_clear_memory)
     coordinator = Coordinator(config_helper=config,
                               data_and_model_provider=data_and_model_provider,
-                              data_to_graph_translator=data_to_graph_entities_provider)
+                              data_to_graph_translator=data_to_graph_entities_provider,
+                              progress_monitor=progress_monitor)
     if not coordinator.is_ready:
         log.error('Failed initializing coordinator component - aborting.')
         sys.exit(-1)
+
+    atexit.register(coordinator.multi_helper.thread_executor.shutdown)
 
     app = Flask(__name__)
 
@@ -135,6 +143,31 @@ if __name__ == '__main__':
         r = RedisDB(config=config)
         all_keys = r.get_key_by_pattern(key_pattern='*', return_list=True)
         return f'All redis keys: {all_keys}'
+
+
+    @app.route('/progress', methods=['GET'])
+    def get_progress_report():
+        request_id = request.args.get('request_id')
+        task = progress_monitor.get_task(task_id=request_id)
+        if task is None:
+            file_path = os.path.join(config.progress_monitor_dump_folder, request_id)
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as json_on_hd:
+                    return json_on_hd.read()
+            else:
+                abort(404, f'Request not found - neither in memory nor on hard-drive.')
+        return task.as_json()
+
+
+    @app.route('/clear_progress', methods=['GET'])
+    def clear_progress_and_dump():
+        progress_monitor.dump_and_clear_memory()
+        abort(200, 'Done.')
+
+
+    @app.route('/ping', methods=['GET'])
+    def ping():
+        abort(200, 'Pong')
 
 
     log.info(f'Front-Desk shall be available on port: {config.front_desk_port}')

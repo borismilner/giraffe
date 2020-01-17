@@ -99,6 +99,7 @@ class ConfigHelper:
             self.redis_get_all_endpoint = self.config[giraffe_section]['redis_get_all_endpoint'].strip()
             self.request_mandatory_field_names = eval(self.config[giraffe_section]['request_type_mandatory_field_name'])
             self.logs_storage_folder = self.config[giraffe_section]['logs_storage_folder']
+            self.progress_monitor_dump_folder = self.config[giraffe_section]['progress_monitor_dump_folder']
             self.admin_db_table_name = self.config[giraffe_section]['admin_db_table_name']
             self.required_request_fields: Dict[str, Dict] = eval(self.config[giraffe_section]['required_request_fields'])
             self.hash_uid_column = eval(self.config[giraffe_section]['hash_uid_column'])

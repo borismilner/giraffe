@@ -37,17 +37,19 @@ def test_integration_without_timing(data_frame_and_models, logger: Logger, spark
                 for df in data_frames:
                     string_column_name = 'graph_node'
                     ready_for_redis = spark_helper.get_string_dict_dataframe(df=df, column_name=string_column_name)
-                    ready_for_redis.write.option('redis_host', config_helper.redis_host_address) \
+                    ready_for_redis.write \
+                        .option('redis_host', config_helper.redis_host_address) \
+                        .option('redis_port', '6379') \
                         .option('redis_column_name', string_column_name) \
                         .option('redis_set_key', prefix) \
-                        .format(source='milner.boris.redis') \
+                        .format(source='spark.to.redis') \
                         .save()
 
             logger.info('Finished writing to redis')
 
         im = ingestion_manger.IngestionManager(config_helper=config_helper)
         im.process_redis_content(key_prefix=streaming_id, request_id='unit-testing')
-        # r = redis_db.get_driver()
+        r = redis_db.get_driver()
         # r.flushall()
 
     logger.info('Done.')

@@ -39,3 +39,7 @@ class ParseModelFailure(GiraffeException):
 
 class TransformerError(GiraffeException):
     pass
+
+
+class ProgressMonitorError(GiraffeException):
+    pass

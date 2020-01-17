@@ -1,3 +1,4 @@
+import atexit
 import os
 
 import findspark
@@ -15,6 +16,7 @@ class DevSparkHelper(SparkHelper):
         self.config = config
         self.spark_session = self.get_spark_session()
         self.spark_context = self.spark_session.sparkContext
+        atexit.register(self.close_spark_session)
 
     @staticmethod
     def list_external_jars(jars_folder: str) -> str:
@@ -31,6 +33,9 @@ class DevSparkHelper(SparkHelper):
             .getOrCreate()  # Adjust this configuration
         return spark
 
+    def close_spark_session(self) -> None:
+        self.spark_session.stop()
+
     def read_df_from_elasticsearch_index(self, index_name: str) -> DataFrame:
         sql_context = SQLContext(self.spark_session.sparkContext)
         es_df = sql_context.read.format("org.elasticsearch.spark.sql").load(f"{index_name}")
@@ -42,8 +47,3 @@ class DevSparkHelper(SparkHelper):
             .option("key.column", self.config.uid_property) \
             .mode('Overwrite') \
             .save()
-
-    # # noinspection PyMethodMayBeStatic
-    # def get_string_dict_dataframe(self, df: DataFrame, column_name: str = 'graph_node') -> DataFrame:
-    #     ready_for_redis = df.rdd.map(lambda row: SparkHelper.to_dictionary_string(row)).toDF('string').withColumnRenamed('value', column_name)
-    #     return ready_for_redis

@@ -1,5 +1,5 @@
-import collections
 import pickle
+import collections
 from typing import List
 
 from giraffe.data_access.neo_db import NeoDB
@@ -8,23 +8,27 @@ from giraffe.exceptions.logical import MissingKeyError
 from giraffe.exceptions.logical import UnexpectedOperation
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
+from giraffe.helpers import utilities
 from giraffe.helpers.config_helper import ConfigHelper
-from giraffe.helpers.structured_logging_fields import Field
+from giraffe.helpers.multi_helper import MultiHelper
+from giraffe.monitoring.progress_monitor import ProgressMonitor
 from redis import Redis
 
 
 class IngestionManager:
-    key_elements_type = collections.namedtuple('key_elements_type', 'job_name operation arguments')
+    key_elements_type = collections.namedtuple('key_elements_type', ['job_name', 'operation', 'arguments'])
 
     supported_operations: List[str]
 
-    def __init__(self, config_helper: ConfigHelper):
+    def __init__(self, config_helper: ConfigHelper, multi_helper: MultiHelper, progress_monitor: ProgressMonitor):
         self.is_ready = False
+        self.progress_monitor: ProgressMonitor = progress_monitor
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.config = config_helper
         try:
-            self.neo_db: NeoDB = NeoDB(config=self.config)
+            self.neo_db: NeoDB = NeoDB(config=self.config, progress_monitor=self.progress_monitor)
             self.redis_db: RedisDB = RedisDB(config=self.config)
+            self.multi_helper: MultiHelper = multi_helper
             self.is_ready = True
         except Exception as the_exception:
             self.log.error(the_exception, exc_info=True)
@@ -46,7 +50,6 @@ class IngestionManager:
     @staticmethod
     def order_jobs(element):
         # Order of the jobs --> <nodes> before <edges> --> Batches sorted by [batch-number] ascending.
-        # return 'a' if 'nodes' in element else 'z'
         return 'nodes' not in element
 
     def publish_job(self, job_name: str, operation: str, operation_arguments: str, items: List):
@@ -74,66 +77,58 @@ class IngestionManager:
                                                   operation=operation,
                                                   arguments=arguments)
 
-    def process_redis_content(self, key_prefix: str, request_id: str, batch_size: int = 50_000):
+    def process_redis_content(self, request_id: str, translation_id: str, batch_size: int = 50_000):
 
-        keys_found = self.redis_db.get_key_by_pattern(key_pattern=f'{key_prefix}{self.config.key_separator}*')
+        # self.progress_monitor.processing_redis_content(request_id=request_id, key_prefix=key_prefix, redis_db=self.redis_db)
+        keys_found = self.redis_db.get_key_by_pattern(key_pattern=f'{translation_id}{self.config.key_separator}*')
         if len(keys_found) == 0:
-            raise MissingKeyError(f'No redis keys with a prefix of: {key_prefix}.')
+            raise MissingKeyError(f'No redis keys with a prefix of: {translation_id}.')
 
         # Handles nodes before edges
         keys_found.sort(key=lambda item: (IngestionManager.order_jobs(item), str.lower(item)))
 
+        all_futures = []
         for key in keys_found:
             is_nodes = 'nodes' in key
             iterator = self.redis_db.pull_set_members_in_batches(key_pattern=key,
                                                                  batch_size=batch_size)
-            awaiting_entries = 0
-            entries = []
-            for entry in iterator:
-                entries.append(entry)
-                awaiting_entries += 1
-                if awaiting_entries < batch_size:
-                    continue
-                try:
-                    self.push_to_neo(entries=entries,
-                                     is_nodes=is_nodes,
-                                     key=key,
-                                     request_id=request_id)
-                except Exception as the_exception:
-                    self.log.error(the_exception,
-                                   exc_info=True)
 
-                entries.clear()
-                awaiting_entries = 0
+            for batch in utilities.iterable_in_batches(iterable=iterator, batch_size=batch_size):
+                future = self.push_to_neo(entries=batch,
+                                          is_nodes=is_nodes,
+                                          key=key,
+                                          request_id=request_id)
+                all_futures.append(future)
 
-            if len(entries) > 0:  # Leftovers
-                try:
-                    self.push_to_neo(entries=entries,
-                                     is_nodes=is_nodes,
-                                     key=key,
-                                     request_id=request_id)
-                except Exception as the_exception:
-                    self.log.error(the_exception,
-                                   exc_info=True)
-                entries.clear()
+            parallel_results = MultiHelper.wait_on_futures(iterable=all_futures)
+            for exception in parallel_results.exceptions:
+                self.progress_monitor.error(request_id=request_id,
+                                            message='Failed pushing into neo4j',
+                                            exception=exception)
+            all_futures.clear()
 
     def push_to_neo(self, is_nodes, entries, key, request_id: str, needs_eval=True):  # needs_eval must be True when jobs are strings (and not dicts)
         key_parts = self.parse_redis_key(key=key)
         elements_count = len(entries)
-        elements_type = "nodes" if is_nodes else "edges"
-        self.log.info(f'Pushing {elements_count} {elements_type} into Neo4j [{key}]')
-        self.log.admin({
-                Field.request_id: request_id,
-                Field.writing_to_neo: elements_count,
-                Field.element_type: elements_type
-        })
+
+        self.progress_monitor.pushing_elements_into_neo4j(key=key,
+                                                          request_id=request_id,
+                                                          how_many=elements_count)
+
         if needs_eval:
             entries = [pickle.loads(bytes.fromhex(job)) for job in entries]
         if is_nodes:
-            self.neo_db.merge_nodes(nodes=entries,
-                                    label=str(key_parts.arguments[0]))  # TODO: Adjust for multiple labels
+            future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_nodes,
+                                                              nodes=entries,
+                                                              label=str(key_parts.arguments[0]),
+                                                              request_id=request_id
+                                                              )
         else:
-            self.neo_db.merge_edges(edges=entries,
-                                    from_label=key_parts.arguments[1],
-                                    to_label=key_parts.arguments[2],
-                                    edge_type=key_parts.arguments[0])
+            future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_edges,
+                                                              edges=entries,
+                                                              from_label=key_parts.arguments[1],
+                                                              to_label=key_parts.arguments[2],
+                                                              edge_type=key_parts.arguments[0],
+                                                              request_id=request_id
+                                                              )
+        return future
