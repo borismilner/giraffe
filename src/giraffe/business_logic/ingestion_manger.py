@@ -16,7 +16,9 @@ from redis import Redis
 
 
 class IngestionManager:
-    key_elements_type = collections.namedtuple('key_elements_type', ['job_name', 'operation', 'arguments'])
+    key_elements_type = collections.namedtuple('key_elements_type', ['job_name',
+                                                                     'operation',
+                                                                     'arguments'])
 
     supported_operations: List[str]
 
@@ -89,15 +91,30 @@ class IngestionManager:
 
         all_futures = []
         for key in keys_found:
-            is_nodes = 'nodes' in key
+            key_parts = self.parse_redis_key(key=key)
             iterator = self.redis_db.pull_set_members_in_batches(key_pattern=key,
                                                                  batch_size=batch_size)
 
+            is_nodes = 'nodes' in key
             for batch in utilities.iterable_in_batches(iterable=iterator, batch_size=batch_size):
-                future = self.push_to_neo(entries=batch,
-                                          is_nodes=is_nodes,
-                                          key=key,
-                                          request_id=request_id)
+                entries = [pickle.loads(bytes.fromhex(job)) for job in batch]
+
+                if is_nodes:
+                    future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_nodes,
+                                                                      request_id=request_id,
+                                                                      nodes=entries,
+                                                                      label=str(key_parts.arguments[0])
+                                                                      )
+                    all_futures.append(future)
+
+                else:
+                    future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_edges,
+                                                                      request_id=request_id,
+                                                                      edges=entries,
+                                                                      from_label=key_parts.arguments[1],
+                                                                      to_label=key_parts.arguments[2],
+                                                                      edge_type=key_parts.arguments[0]
+                                                                      )
                 all_futures.append(future)
 
             parallel_results = MultiHelper.wait_on_futures(iterable=all_futures)
@@ -106,29 +123,3 @@ class IngestionManager:
                                             message='Failed pushing into neo4j',
                                             exception=exception)
             all_futures.clear()
-
-    def push_to_neo(self, is_nodes, entries, key, request_id: str, needs_eval=True):  # needs_eval must be True when jobs are strings (and not dicts)
-        key_parts = self.parse_redis_key(key=key)
-        elements_count = len(entries)
-
-        self.progress_monitor.pushing_elements_into_neo4j(key=key,
-                                                          request_id=request_id,
-                                                          how_many=elements_count)
-
-        if needs_eval:
-            entries = [pickle.loads(bytes.fromhex(job)) for job in entries]
-        if is_nodes:
-            future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_nodes,
-                                                              nodes=entries,
-                                                              label=str(key_parts.arguments[0]),
-                                                              request_id=request_id
-                                                              )
-        else:
-            future = self.multi_helper.run_in_separate_thread(function=self.neo_db.merge_edges,
-                                                              edges=entries,
-                                                              from_label=key_parts.arguments[1],
-                                                              to_label=key_parts.arguments[2],
-                                                              edge_type=key_parts.arguments[0],
-                                                              request_id=request_id
-                                                              )
-        return future
