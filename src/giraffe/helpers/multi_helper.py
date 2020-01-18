@@ -32,10 +32,11 @@ class MultiHelper:
         all_ok = True
 
         completed_futures = wait(fs=iterable, return_when='ALL_COMPLETED')
+        # noinspection PyUnresolvedReferences
         for result in completed_futures.done:
             total += 1
             try:
-                results.append(result)
+                results.append(result.result())
                 succeeded += 1
             except Exception as exception:
                 all_ok = False

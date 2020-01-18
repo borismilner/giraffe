@@ -54,7 +54,7 @@ def test_process_job(config_helper, ingestion_manager):
     commons.purge_neo4j_database()
     commons.init_redis_test_data()
     im = ingestion_manager
-    im.process_redis_content(key_prefix=config_helper.test_job_name, request_id='unit-testing')
+    im.process_redis_content(translation_id=config_helper.test_job_name, request_id='unit-testing')
     query = f'MATCH (:{config_helper.test_labels[0]}) RETURN COUNT(*) AS count'
     count = commons.neo.pull_query(query=query).value()[0]
     assert count == config_helper.number_of_test_nodes

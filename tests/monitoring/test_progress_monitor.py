@@ -11,8 +11,8 @@ request_type = 'NODES'
 request_content = '{"blah" : "blah"}'
 
 
-def test_progress_monitor_simple_scenario(config_helper):
-    pm = ProgressMonitor(config=config_helper)
+def test_progress_monitor_simple_scenario(config_helper, event_dispatcher):
+    pm = ProgressMonitor(event_dispatcher=event_dispatcher, config=config_helper)
     assert isinstance(pm.all_tasks, dict)
     assert not pm.all_tasks  # Dictionary is emtpy
 
@@ -45,8 +45,8 @@ def test_progress_monitor_simple_scenario(config_helper):
         assert task.status == status
 
 
-def test_progress_monitor_error_registering(config_helper):
-    pm = ProgressMonitor(config=config_helper)
+def test_progress_monitor_error_registering(config_helper, event_dispatcher):
+    pm = ProgressMonitor(event_dispatcher=event_dispatcher, config=config_helper)
     pm.task_started(request_id=request_id, request_type=request_type, request_content=request_content)
 
     task = pm.get_task(task_id=request_id)
@@ -76,8 +76,8 @@ def test_progress_monitor_error_registering(config_helper):
     assert all(f'in {error_raising_method_name}' in error for error in task.errors)
 
 
-def test_progress_monitor_operations(config_helper):
-    pm = ProgressMonitor(config=config_helper)
+def test_progress_monitor_operations(event_dispatcher, config_helper):
+    pm = ProgressMonitor(event_dispatcher=event_dispatcher, config=config_helper)
     pm.task_started(request_id=request_id, request_type=request_type, request_content=request_content)
     now_timestamp = int(datetime.now().timestamp())
     task = pm.get_task(task_id=request_id)

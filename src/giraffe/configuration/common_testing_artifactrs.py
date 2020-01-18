@@ -11,6 +11,7 @@ from giraffe.data_access import neo_db
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers.config_helper import ConfigHelper
+from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.multi_helper import MultiHelper
 from giraffe.monitoring.progress_monitor import ProgressMonitor
 from redis import Redis
@@ -27,17 +28,21 @@ elastic_search: Elasticsearch
 
 
 def bootstrap():
-    global log, neo, redis_db, r, ingestion_manager, elastic_search, queue_for_logging
+    global log, neo, redis_db, r, ingestion_manager, elastic_search, queue_for_logging, config
     queue_for_logging = Manager().Queue(-1)
     log = logging.getLogger('testing_redis')
-    progress_monitor = ProgressMonitor(config)
+    progress_monitor = ProgressMonitor(event_dispatcher=EventDispatcher(), config=config)
     progress_monitor.task_started(request_id='unit-testing',
                                   request_type='white_list',
                                   request_content='nothing')
     neo = NeoDB(config=config, progress_monitor=progress_monitor)
     redis_db = RedisDB(config=config)
     r = redis_db.get_driver()
-    ingestion_manager = IngestionManager(config_helper=config, multi_helper=MultiHelper(config), progress_monitor=ProgressMonitor(config=config))
+    ingestion_manager = IngestionManager(config_helper=config,
+                                         multi_helper=MultiHelper(config),
+                                         progress_monitor=ProgressMonitor(event_dispatcher=EventDispatcher(),
+                                                                          config=config)
+                                         )
     elastic_search = Elasticsearch()
 
 

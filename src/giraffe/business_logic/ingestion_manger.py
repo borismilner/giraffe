@@ -96,7 +96,8 @@ class IngestionManager:
                                                                  batch_size=batch_size)
 
             is_nodes = 'nodes' in key
-            for batch in utilities.iterable_in_batches(iterable=iterator, batch_size=batch_size):
+            for batch in utilities.iterable_in_batches(iterable=iterator,
+                                                       batch_size=batch_size):
                 entries = [pickle.loads(bytes.fromhex(job)) for job in batch]
 
                 if is_nodes:

@@ -8,6 +8,9 @@ from giraffe.data_access.abstract.data_and_model_provider import data_and_graph_
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
+from giraffe.helpers.EventDispatcher import EventDispatcher
+from giraffe.helpers.EventDispatcher import GiraffeEvent
+from giraffe.helpers.EventDispatcher import GiraffeEventType
 from giraffe.helpers.structured_logging_fields import Field
 from giraffe.monitoring.ingestion_request import IngestionRequest
 from giraffe.monitoring.ingestion_request import RequestStatus
@@ -16,12 +19,13 @@ from giraffe.helpers import utilities
 
 
 class ProgressMonitor:
-    def __init__(self, config=config_helper.get_config()):
+    def __init__(self, event_dispatcher: EventDispatcher, config=config_helper.get_config()):
         self.lock = threading.Lock()
         self.config = config
         self.log = log_helper.get_logger(logger_name=__name__)
         self.log.debug('Progress-Monitor started.')
         self.all_tasks: Dict[str, IngestionRequest] = {}
+        event_dispatcher.register_callback(callback=self.on_giraffe_event)
 
     def get_task(self, task_id: str = None):
         if task_id is None:
@@ -70,13 +74,13 @@ class ProgressMonitor:
     # 4. Data is ready to be read from redis into neo4j.
     def finished_writing_all_into_redis(self,
                                         request_id: str,
-                                        future_results):
+                                        parallel_results):
 
         with self.lock:
             task = self.get_task(task_id=request_id)
             task.set_status(RequestStatus.READY_TO_WRITE_FROM_REDIS_INTO_NEO)
-            number_of_successful_writes_to_redis = len(future_results.done)
-            number_of_failed_writes_to_redis = len(future_results.not_done)
+            number_of_successful_writes_to_redis = len(parallel_results.results)
+            number_of_failed_writes_to_redis = len(parallel_results.exceptions)
             if number_of_failed_writes_to_redis > 0:
                 self.log.info(f'Failed redis-writers: {number_of_failed_writes_to_redis}')
                 self.log.admin({Field.failed_redis_writers: number_of_failed_writes_to_redis})
@@ -166,6 +170,12 @@ class ProgressMonitor:
                     Field.percent_done: percent
             })
 
+    def deleting_keys_from_redis(self,
+                                 request_id: str):
+        with self.lock:
+            task = self.get_task(task_id=request_id)
+            task.set_status(status=RequestStatus.DELETING_KEYS_FROM_REDIS)
+
     def merging_into_neo4j(self,
                            request_id: str,
                            element_type: str,
@@ -213,3 +223,36 @@ class ProgressMonitor:
         self.dump_to_hard_drive_and_fluent()
         self.log.info('Clearing tasks from memory.')
         self.all_tasks.clear()
+
+    def on_giraffe_event(self, event: GiraffeEvent):
+        event_type = event.event_type
+        if event_type == GiraffeEventType.STARTED:
+            self.task_started(request_id=event.request_id,
+                              request_type=event.arguments['request_type'],
+                              request_content=event.arguments['request_content'])
+        elif event_type == GiraffeEventType.FETCHING_DATA_AND_MODELS:
+            self.fetching_data_and_models(request_id=event.request_id,
+                                          source_description=event.arguments['source_description'])
+        elif event_type == GiraffeEventType.FINISHED_FETCHING_DATA_AND_MODELS:
+            self.received_data_and_models(request_id=event.request_id,
+                                          data_models=event.arguments['data_models'])
+        elif event_type == GiraffeEventType.WRITING_GRAPH_ELEMENTS_INTO_REDIS:
+            self.processing_source_into_redis(request_id=event.request_id,
+                                              source_name=event.arguments['source_name'])
+        elif event_type == GiraffeEventType.REDIS_IS_READY_FOR_CONSUMPTION:
+            self.finished_writing_all_into_redis(request_id=event.request_id,
+                                                 parallel_results=event.arguments['parallel_results'])
+        elif event_type == GiraffeEventType.WRITING_FROM_REDIS_TO_NEO:
+            self.writing_from_redis_into_neo(result=event.arguments['details'],
+                                             redis_db=event.arguments['redis_db'])
+        elif event_type == GiraffeEventType.DELETING_REDIS_KEYS:
+            self.deleting_keys_from_redis(request_id=event.request_id)
+
+        elif event_type == GiraffeEventType.DONE_PROCESSING_REQUEST:
+            self.all_finished(request_id=event.request_id)
+        elif event_type == GiraffeEventType.ERROR:
+            self.error(request_id=event.request_id,
+                       message=event.arguments['message'],
+                       exception=event.arguments['exception'])
+        else:
+            self.log.debug(f'Ignored event type: {event_type}')

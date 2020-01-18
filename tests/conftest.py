@@ -3,6 +3,8 @@ import runpy
 from logging import Logger
 from multiprocessing import Process
 
+from giraffe.helpers.EventDispatcher import EventDispatcher
+
 import tests.business_logic as bl
 import giraffe.configuration.common_testing_artifactrs as commons
 import pytest
@@ -27,14 +29,19 @@ def config_helper():
 
 
 @pytest.fixture(scope="session")
+def event_dispatcher():
+    return EventDispatcher()
+
+
+@pytest.fixture(scope="session")
 def white_list_file_path():
     white_list_file_path = os.path.join(os.path.dirname(os.path.abspath(bl.__file__)), "white_list.txt")
     return white_list_file_path
 
 
 @pytest.fixture(scope="session")
-def progress_monitor(config_helper):
-    progress_monitor = ProgressMonitor(config=config_helper)
+def progress_monitor(config_helper, event_dispatcher):
+    progress_monitor = ProgressMonitor(event_dispatcher=event_dispatcher, config=config_helper)
     progress_monitor.task_started(request_id='unit-testing',
                                   request_type='white_list',
                                   request_content='nothing')

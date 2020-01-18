@@ -19,7 +19,7 @@ from giraffe.data_access.data_model_providers.mock_data_model_provider import Mo
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
-from giraffe.helpers.structured_logging_fields import Field
+from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.utilities import validate_is_file
 from giraffe.monitoring.progress_monitor import ProgressMonitor
 
@@ -42,10 +42,12 @@ if __name__ == '__main__':
         validate_is_file(file_path=config_ini_file)
         config = config_helper.get_config(configurations_ini_file_path=config_ini_file)
 
+    event_dispatcher = EventDispatcher()
+
     logging_file_path = os.path.join(config.logs_storage_folder, 'giraffe.log')
     file_handler = RotatingFileHandler(filename=logging_file_path,
                                        mode='a',
-                                       maxBytes=1_000_000_000,
+                                       maxBytes=1_000_000,
                                        backupCount=3,
                                        encoding='utf-8',
                                        delay=False)
@@ -59,7 +61,6 @@ if __name__ == '__main__':
     execution_env = config.execution_environment
 
     log.info(f'Execution environment: {execution_env}')
-    log.admin({Field.execution_environment: execution_env})
 
     # Instantiating providers based on the execution environment
 
@@ -75,12 +76,13 @@ if __name__ == '__main__':
     not_acceptable_error_code = 406
 
     log.debug('Initializing coordinator module.')
-    progress_monitor = ProgressMonitor(config=config)
+    progress_monitor = ProgressMonitor(event_dispatcher=event_dispatcher, config=config)
     atexit.register(progress_monitor.dump_and_clear_memory)
     coordinator = Coordinator(config_helper=config,
                               data_and_model_provider=data_and_model_provider,
                               data_to_graph_translator=data_to_graph_entities_provider,
-                              progress_monitor=progress_monitor)
+                              progress_monitor=progress_monitor,
+                              event_dispatcher=event_dispatcher)
     if not coordinator.is_ready:
         log.error('Failed initializing coordinator component - aborting.')
         sys.exit(-1)
@@ -110,10 +112,7 @@ if __name__ == '__main__':
         except (JSONDecodeError, TypeError, Exception):
             abort(not_acceptable_error_code, 'Failed parsing the request as a JSON string.')
         log.info(f'Received a request from {request.remote_addr}: {client_request}')
-        log.admin({
-                Field.request_ip: request.remote_addr,
-                Field.request: client_request
-        })
+
         request_type_field_names = config.request_mandatory_field_names
 
         # Start of validations
@@ -132,7 +131,10 @@ if __name__ == '__main__':
         # End of validations
 
         log.debug('Starting coordinator processing function.')
-        coordinator.begin_processing(client_request=client_request)
+        coordinator.thread_pool.apply_async(coordinator.process_request,
+                                            (client_request,),
+                                            callback=coordinator.processing_success_callback,
+                                            error_callback=coordinator.processing_error_callback)
 
         now = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
         return f"[{now}] Received: {client_request}."  # Success 200 OK

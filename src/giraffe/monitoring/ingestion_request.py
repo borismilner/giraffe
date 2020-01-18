@@ -17,8 +17,9 @@ class RequestStatus(Enum):
     READY_TO_WRITE_FROM_REDIS_INTO_NEO = 4
     STARTED_WRITING_FROM_REDIS_TO_NEO = 5
     FINISHED_WRITING_FROM_REDIS_TO_NEO = 6
-    DONE = 7
-    ERROR = 8
+    DELETING_KEYS_FROM_REDIS = 7
+    DONE = 8
+    ERROR = 9
 
 
 class IngestionRequest:
