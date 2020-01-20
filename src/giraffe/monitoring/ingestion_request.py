@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from datetime import datetime
 from typing import Dict
 from typing import Set
@@ -10,16 +10,16 @@ from giraffe.helpers.utilities import timestamp_to_str
 
 
 class RequestStatus(Enum):
-    STARTED = 0
-    STARTED_READING_DATA_AND_MODELS = 1
-    FINISHED_READING_DATA_AND_MODELS = 2
-    TRANSLATING_INTO_REDIS = 3
-    READY_TO_WRITE_FROM_REDIS_INTO_NEO = 4
-    STARTED_WRITING_FROM_REDIS_TO_NEO = 5
-    FINISHED_WRITING_FROM_REDIS_TO_NEO = 6
-    DELETING_KEYS_FROM_REDIS = 7
-    DONE = 8
-    ERROR = 9
+    STARTED = auto()
+    STARTED_READING_DATA_AND_MODELS = auto()
+    FINISHED_READING_DATA_AND_MODELS = auto()
+    TRANSLATING_INTO_REDIS = auto()
+    READY_TO_WRITE_FROM_REDIS_INTO_NEO = auto()
+    STARTED_WRITING_FROM_REDIS_TO_NEO = auto()
+    FINISHED_WRITING_FROM_REDIS_TO_NEO = auto()
+    DELETING_KEYS_FROM_REDIS = auto()
+    DONE = auto()
+    ERROR = auto()
 
 
 class IngestionRequest:

@@ -10,8 +10,8 @@ from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
 from giraffe.helpers import utilities
 from giraffe.helpers.config_helper import ConfigHelper
+from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.multi_helper import MultiHelper
-from giraffe.monitoring.progress_monitor import ProgressMonitor
 from redis import Redis
 
 
@@ -22,14 +22,16 @@ class IngestionManager:
 
     supported_operations: List[str]
 
-    def __init__(self, config_helper: ConfigHelper, multi_helper: MultiHelper, progress_monitor: ProgressMonitor):
+    def __init__(self, config_helper: ConfigHelper, multi_helper: MultiHelper, event_dispatcher: EventDispatcher):
         self.is_ready = False
-        self.progress_monitor: ProgressMonitor = progress_monitor
+        self.event_dispatcher = event_dispatcher
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
         self.config = config_helper
         try:
-            self.neo_db: NeoDB = NeoDB(config=self.config, progress_monitor=self.progress_monitor)
-            self.redis_db: RedisDB = RedisDB(config=self.config)
+            self.neo_db: NeoDB = NeoDB(config=self.config,
+                                       event_dispatcher=self.event_dispatcher)
+            self.redis_db: RedisDB = RedisDB(config=self.config,
+                                             event_dispatcher=self.event_dispatcher)
             self.multi_helper: MultiHelper = multi_helper
             self.is_ready = True
         except Exception as the_exception:
@@ -120,7 +122,9 @@ class IngestionManager:
 
             parallel_results = MultiHelper.wait_on_futures(iterable=all_futures)
             for exception in parallel_results.exceptions:
-                self.progress_monitor.error(request_id=request_id,
-                                            message='Failed pushing into neo4j',
-                                            exception=exception)
+                pass
+                # TODO: fire an event
+                # self.progress_monitor.error(request_id=request_id,
+                #                             message='Failed pushing into neo4j',
+                #                             exception=exception)
             all_futures.clear()

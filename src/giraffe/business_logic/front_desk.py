@@ -20,6 +20,8 @@ from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.EventDispatcher import EventDispatcher
+from giraffe.helpers.EventDispatcher import GiraffeEvent
+from giraffe.helpers.EventDispatcher import GiraffeEventType
 from giraffe.helpers.utilities import validate_is_file
 from giraffe.monitoring.progress_monitor import ProgressMonitor
 
@@ -110,8 +112,32 @@ if __name__ == '__main__':
         try:
             client_request = json.loads(request.data, encoding='utf8')
         except (JSONDecodeError, TypeError, Exception):
-            abort(not_acceptable_error_code, 'Failed parsing the request as a JSON string.')
-        log.info(f'Received a request from {request.remote_addr}: {client_request}')
+            failure_message = 'Failed parsing the request as a JSON string.'
+            event_dispatcher.dispatch_event(
+                    event=GiraffeEvent(
+                            request_id=None,
+                            event_type=GiraffeEventType.GENERAL_ERROR,
+                            message=failure_message,
+                            arguments={
+                                    'client_ip': request.remote_addr,
+                                    'request_data': request.data
+                            }
+                    )
+            )
+            abort(not_acceptable_error_code, failure_message)
+
+        request_received_message = f'Received a request from {request.remote_addr}: {client_request}'
+        event_dispatcher.dispatch_event(
+                event=GiraffeEvent(
+                        request_id=None,
+                        event_type=GiraffeEventType.GENERAL_EVENT,
+                        message=request_received_message,
+                        arguments={
+                                'client_ip': request.remote_addr,
+                                'request_content': client_request
+                        }
+                )
+        )
 
         request_type_field_names = config.request_mandatory_field_names
 
@@ -142,7 +168,7 @@ if __name__ == '__main__':
 
     @app.route(config.redis_get_all_endpoint, methods=['GET'])
     def all_redis_keys():
-        r = RedisDB(config=config)
+        r = RedisDB(event_dispatcher=event_dispatcher, config=config)
         all_keys = r.get_key_by_pattern(key_pattern='*', return_list=True)
         return f'All redis keys: {all_keys}'
 
@@ -165,6 +191,12 @@ if __name__ == '__main__':
     def clear_progress_and_dump():
         progress_monitor.dump_and_clear_memory()
         abort(200, 'Done.')
+
+
+    @app.route('/register_monitor', methods=['GET'])
+    def register_monitor():
+        event_dispatcher.tcp_server.accept_client_connection()
+        return 'TCP Monitor attached'
 
 
     @app.route('/ping', methods=['GET'])

@@ -1,60 +1,26 @@
-import logging
 import pickle
 from logging import Logger
-from multiprocessing import Manager
 from multiprocessing import Queue
 
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from giraffe.business_logic.ingestion_manger import IngestionManager
-from giraffe.data_access import neo_db
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers.config_helper import ConfigHelper
-from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.multi_helper import MultiHelper
-from giraffe.monitoring.progress_monitor import ProgressMonitor
-from redis import Redis
 
 config = ConfigHelper()
 queue_for_logging: Queue
 
-log: Logger
-neo: NeoDB
-redis_db: RedisDB
-r: Redis
-ingestion_manager: IngestionManager
-elastic_search: Elasticsearch
 
-
-def bootstrap():
-    global log, neo, redis_db, r, ingestion_manager, elastic_search, queue_for_logging, config
-    queue_for_logging = Manager().Queue(-1)
-    log = logging.getLogger('testing_redis')
-    progress_monitor = ProgressMonitor(event_dispatcher=EventDispatcher(), config=config)
-    progress_monitor.task_started(request_id='unit-testing',
-                                  request_type='white_list',
-                                  request_content='nothing')
-    neo = NeoDB(config=config, progress_monitor=progress_monitor)
-    redis_db = RedisDB(config=config)
-    r = redis_db.get_driver()
-    ingestion_manager = IngestionManager(config_helper=config,
-                                         multi_helper=MultiHelper(config),
-                                         progress_monitor=ProgressMonitor(event_dispatcher=EventDispatcher(),
-                                                                          config=config)
-                                         )
-    elastic_search = Elasticsearch()
-
-
-def purge_redis_database():
-    global log, redis_db, r, ingestion_manager
+def purge_redis_database(redis_db: RedisDB, log: Logger):
     db: RedisDB = redis_db
     logger: Logger = log
     logger.info("Purging all keys from redis.")
     db.purge_all()
 
 
-def purge_neo4j_database():
+def purge_neo4j_database(log: Logger, neo: NeoDB):
     label_to_delete = config.test_labels[0]
     log.debug(f'Purging all nodes with label: {label_to_delete}')
     query = f'MATCH (n) DETACH DELETE n'
@@ -62,15 +28,13 @@ def purge_neo4j_database():
     log.debug(f'Removed {summary.counters.nodes_deleted} {label_to_delete} nodes.')
 
 
-def purge_elasticsearch_database():
-    global elastic_search, redis_db, r, ingestion_manager
-    es: Elasticsearch = elastic_search
+def purge_elasticsearch_database(es: Elasticsearch, log: Logger):
     test_index = config.test_elasticsearch_index
     log.debug(f'Purging ES test index: {test_index}')
     es.indices.delete(index=test_index, ignore=[400, 404])
 
 
-def delete_redis_keys_prefix(prefix: str) -> int:
+def delete_redis_keys_prefix(prefix: str, redis_db: RedisDB, log: Logger) -> int:
     redis_driver = redis_db.get_driver()
     num_deleted = 0
     log.debug(f'Deleting keys with a prefix of: {prefix}')
@@ -81,9 +45,7 @@ def delete_redis_keys_prefix(prefix: str) -> int:
     return num_deleted
 
 
-def init_elastic_test_data():
-    global elastic_search, log, redis_db, r, ingestion_manager
-    es: Elasticsearch = elastic_search
+def init_elastic_test_data(es: Elasticsearch):
     actions = []
     for node in test_nodes:
         actions.append(
@@ -95,10 +57,7 @@ def init_elastic_test_data():
     helpers.bulk(es, actions, refresh=True)
 
 
-def init_redis_test_data():
-    global log, redis_db, r, ingestion_manager
-    im: IngestionManager = ingestion_manager
-
+def init_redis_test_data(im: IngestionManager):
     # Populate nodes
     im.publish_job(job_name=config.test_job_name,
                    operation='nodes_ingest',
@@ -112,9 +71,7 @@ def init_redis_test_data():
                    items=[pickle.dumps(value).hex() for value in test_edges])
 
 
-def init_neo_test_data():
-    global neo
-    db: neo_db.NeoDB = neo
+def init_neo_test_data(db: NeoDB):
     db.merge_nodes(nodes=test_nodes, label=config.test_labels[0], request_id='unit-testing')
     db.create_index_if_not_exists(label=config.test_labels[0], property_name='_uid')
 

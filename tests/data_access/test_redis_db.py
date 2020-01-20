@@ -9,9 +9,9 @@ from redis import Redis
 
 
 @pytest.fixture(autouse=True)
-def run_around_tests():
-    commons.purge_redis_database()
-    commons.init_redis_test_data()
+def run_around_tests(redis_db, logger, ingestion_manager):
+    commons.purge_redis_database(redis_db=redis_db, log=logger)
+    commons.init_redis_test_data(im=ingestion_manager)
     yield
 
 
@@ -38,11 +38,11 @@ def test_order_jobs():
         assert ordered_jobs == correct_order
 
 
-def test_delete_keys(redis_db, redis_driver, config_helper):
+def test_delete_keys(redis_db, redis_driver, config_helper, logger, ingestion_manager):
     db: RedisDB = redis_db
     r: Redis = redis_driver
-    commons.purge_redis_database()
-    commons.init_redis_test_data()
+    commons.purge_redis_database(redis_db=redis_db, log=logger)
+    commons.init_redis_test_data(im=ingestion_manager)
     keys_to_delete = [key for key in r.keys(pattern=f'{config_helper.test_job_name}*')]
     db.delete_keys(keys=keys_to_delete)
     after_deletion = (key for key in r.keys(pattern='test_key*'))

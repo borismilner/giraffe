@@ -19,7 +19,8 @@ from giraffe.monitoring.progress_monitor import ProgressMonitor
 
 
 class Coordinator:
-    def __init__(self, config_helper: ConfigHelper,
+    def __init__(self,
+                 config_helper: ConfigHelper,
                  data_and_model_provider: DataAndModelProvider,
                  data_to_graph_translator: DataToGraphEntitiesProvider,
                  progress_monitor: ProgressMonitor,
@@ -31,14 +32,16 @@ class Coordinator:
         # noinspection PyBroadException
         try:
             self.config = config_helper
-            self.redis_db = RedisDB(config=self.config)
+            self.redis_db = RedisDB(event_dispatcher=self.event_dispatcher, config=self.config)
             self.data_and_model_provider = data_and_model_provider
             self.thread_pool = ThreadPool()
             self.data_to_graph_translator = data_to_graph_translator
             self.multi_helper = MultiHelper(config=self.config)
-            self.im = IngestionManager(config_helper=self.config,
-                                       multi_helper=self.multi_helper,
-                                       progress_monitor=self.progress_monitor)
+            self.im = IngestionManager(
+                    config_helper=self.config,
+                    multi_helper=self.multi_helper,
+                    event_dispatcher=self.event_dispatcher
+            )
             self.is_ready = True
         except Exception as the_exception:
             self.log.error(the_exception, exc_info=True)
@@ -59,9 +62,12 @@ class Coordinator:
                 event=GiraffeEvent(
                         request_id=request_id,
                         event_type=GiraffeEventType.STARTED,
-                        message=f'Processing request id: {request_id}',
-                        arguments={'request_type': request_type, 'request_content': str(request)}
-                ))
+                        message=f'Starting processing request id: {request_id}',
+                        arguments={'request_type': request_type,
+                                   'request_content': str(request)
+                                   }
+                )
+        )
 
         if request_type == 'white_list':
             file_path = request['file_path']
@@ -79,7 +85,9 @@ class Coordinator:
                             request_id=request_id,
                             event_type=GiraffeEventType.ERROR,
                             message=error_message,
-                            arguments={'message': error_message, 'exception': not_implemented}
+                            arguments={'message': error_message,
+                                       'exception': not_implemented
+                                       }
                     )
             )
             raise not_implemented
@@ -151,11 +159,12 @@ class Coordinator:
                                                  })
             )
 
-            future = self.multi_helper.run_in_separate_thread(function=self.redis_db.write_translator_result_to_redis,
-                                                              entry_dict=translated_graph_entities,
-                                                              source_name=data_and_model.source_name,
-                                                              request_id=request_id,
-                                                              )
+            future = self.multi_helper.run_in_separate_thread(
+                    function=self.redis_db.write_translator_result_to_redis,
+                    entry_dict=translated_graph_entities,
+                    source_name=data_and_model.source_name,
+                    request_id=request_id,
+            )
             all_futures.append(future)
 
         parallel_results = MultiHelper.wait_on_futures(iterable=all_futures)
@@ -227,10 +236,13 @@ class Coordinator:
             )
             self.redis_db.delete_keys(keys=processed_keys)
             self.log.info(f'{source_name} is ready.')
-            self.log.admin({
-                    Field.request_id: request_id,
-                    Field.ready: source_name
-            })
+            self.log.admin(
+                    {
+                            Field.request_id: request_id,
+                            Field.ready: source_name
+                    }
+            )
+
         # Progress-5: Finished writing all redis content into neo4j.
         self.event_dispatcher.dispatch_event(
                 event=GiraffeEvent(

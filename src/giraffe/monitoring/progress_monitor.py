@@ -254,5 +254,10 @@ class ProgressMonitor:
             self.error(request_id=event.request_id,
                        message=event.arguments['message'],
                        exception=event.arguments['exception'])
+        elif event_type == GiraffeEventType.PUSHED_GRAPH_ELEMENTS_INTO_NEO:
+            self.merging_into_neo4j(request_id=event.request_id,
+                                    element_type=event.arguments['element_type'],
+                                    element_properties=event.arguments['element_properties'],
+                                    summary=event.arguments['summary'])
         else:
             self.log.debug(f'Ignored event type: {event_type}')

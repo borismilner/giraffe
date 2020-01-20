@@ -9,13 +9,14 @@ from giraffe.exceptions.logical import MissingKeyError
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.dev_spark_helper import DevSparkHelper
+from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.structured_logging_fields import Field
 from pyspark.sql import DataFrame
 from redis import Redis
 
 
 class RedisDB(object):
-    def __init__(self, config=config_helper.get_config()):
+    def __init__(self, event_dispatcher: EventDispatcher, config=config_helper.get_config()):
         self.log = log_helper.get_logger(logger_name=f'{self.__class__.__name__}_{threading.current_thread().name}')
         self.log.debug(f'Initialising redis driver.')
         self.driver: Redis = redis.StrictRedis(host=config.redis_host_address, port=config.redis_port, decode_responses=True)

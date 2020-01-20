@@ -4,10 +4,10 @@ from giraffe.data_access import neo_db
 
 
 @pytest.fixture(autouse=True)
-def run_around_tests():
-    commons.init_neo_test_data()
+def run_around_tests(neo, logger):
+    commons.init_neo_test_data(db=neo)
     yield
-    commons.purge_neo4j_database()
+    commons.purge_neo4j_database(log=logger, neo=neo)
 
 
 def test_create_index_if_not_exists(neo, config_helper):
@@ -29,9 +29,9 @@ def test_drop_index_if_exists(neo, config_helper):
     assert summary.counters.indexes_removed == 1
 
 
-def test_merge_nodes(neo, config_helper, nodes, edges):
+def test_merge_nodes(neo, config_helper, nodes, edges, logger):
     db: neo_db.NeoDB = neo
-    commons.purge_neo4j_database()
+    commons.purge_neo4j_database(log=logger, neo=neo)
     summary = db.merge_nodes(nodes=nodes, label=config_helper.test_labels[0], request_id='unit-testing')
     assert summary.counters.nodes_created == len(nodes)
 

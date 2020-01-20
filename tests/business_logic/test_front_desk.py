@@ -1,6 +1,5 @@
 import os
 
-import giraffe.configuration.common_testing_artifactrs as commons
 import requests
 from giraffe.helpers.config_helper import ConfigHelper
 
@@ -12,8 +11,8 @@ status_code_unacceptable = 406
 white_list_file_path = os.path.join(os.path.dirname(os.path.abspath(bl.__file__)), "white_list.txt")
 
 
-def test_ingest_request(config_helper):
-    log = commons.log
+def test_ingest_request(config_helper, logger):
+    log = logger
     front_desk_address = f'{config_helper.test_front_desk_address}:{config_helper.front_desk_port}'
     ingest_address = f'{front_desk_address}{config_helper.ingestion_endpoint}'
     data = {}

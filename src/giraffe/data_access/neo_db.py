@@ -10,7 +10,9 @@ from giraffe.exceptions.logical import QuerySyntaxError
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
-from giraffe.monitoring.progress_monitor import ProgressMonitor
+from giraffe.helpers.EventDispatcher import EventDispatcher
+from giraffe.helpers.EventDispatcher import GiraffeEvent
+from giraffe.helpers.EventDispatcher import GiraffeEventType
 from neo4j import BoltStatementResult
 from neo4j import BoltStatementResultSummary
 from neo4j import GraphDatabase
@@ -22,9 +24,9 @@ from py2neo import Graph
 # noinspection SqlDialectInspection,SqlNoDataSourceInspection
 class NeoDB(object):
 
-    def __init__(self, progress_monitor: ProgressMonitor, config=config_helper.get_config()):
+    def __init__(self, event_dispatcher: EventDispatcher, config=config_helper.get_config()):
         self.config = config
-        self.progress_monitor = progress_monitor
+        self.event_dispatcher = event_dispatcher
         self.log = log_helper.get_logger(logger_name=f'{self.__class__.__name__}_{threading.current_thread().name}')
 
         # Connecting py2neo
@@ -105,7 +107,6 @@ class NeoDB(object):
 
     def pull_query(self, query: str) -> BoltStatementResult:
 
-        summary: BoltStatementResult
         with self._driver.session() as session:
             with session.begin_transaction() as tx:
                 result = tx.run(query)
@@ -132,10 +133,18 @@ class NeoDB(object):
         self.log.debug(f'Pushing into neo4j {len(nodes)} nodes.')
         summary = self.run_query(query=query, nodes=nodes)
         self.log.debug(f'Done pushing: {summary.counters}')
-        self.progress_monitor.merging_into_neo4j(request_id=request_id,
-                                                 element_type='NODES',
-                                                 element_properties=str(label),
-                                                 summary=summary)
+        self.event_dispatcher.dispatch_event(
+                event=GiraffeEvent(
+                        request_id=request_id,
+                        event_type=GiraffeEventType.PUSHED_GRAPH_ELEMENTS_INTO_NEO,
+                        message=f'Pushed: {len(nodes)} nodes into neo4j: {str(label)} [{summary.counters}]',
+                        arguments={'request_id': request_id,
+                                   'element_type': 'NODES',
+                                   'element_properties': str(label),
+                                   'summary': summary
+                                   }
+                )
+        )
         return summary
 
     # NOTE: while it is possible to match without the from/to labels - it is too slow.
@@ -153,10 +162,18 @@ class NeoDB(object):
         self.log.debug(f'Pushing into neo4j {len(edges)} edges of type {edge_type}.')
         summary = self.run_query(query=query, edges=edges)
         self.log.debug(f'Done pushing: {summary.counters}')
-        self.progress_monitor.merging_into_neo4j(request_id=request_id,
-                                                 element_type='NODES',
-                                                 element_properties=f'{edge_type}_{from_label}_{to_label}',
-                                                 summary=summary)
+        self.event_dispatcher.dispatch_event(
+                event=GiraffeEvent(
+                        request_id=request_id,
+                        event_type=GiraffeEventType.PUSHED_GRAPH_ELEMENTS_INTO_NEO,
+                        message=f'Pushed: {len(edges)} edges into neo4j: {edge_type}_{from_label}_{to_label} [{summary.counters}]',
+                        arguments={'request_id': request_id,
+                                   'element_type': 'EDGES',
+                                   'element_properties': f'{edge_type}_{from_label}_{to_label}',
+                                   'summary': summary
+                                   }
+                )
+        )
         return summary
 
     def delete_nodes_by_properties(self, label: str, property_name_value_tuples: List[Tuple[str, str]]) -> Dict[str, int]:

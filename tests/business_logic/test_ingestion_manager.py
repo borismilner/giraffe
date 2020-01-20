@@ -15,11 +15,11 @@ def test_parse_redis_key(config_helper, ingestion_manager):
     assert set(parsed.arguments) == set(labels)
 
 
-def test_publish_job(config_helper, redis_driver, ingestion_manager, nodes, edges):
+def test_publish_job(config_helper, redis_driver, ingestion_manager, nodes, edges, logger, redis_db):
     r: Redis = redis_driver
     im: IngestionManager = ingestion_manager
 
-    commons.purge_redis_database()
+    commons.purge_redis_database(redis_db=redis_db, log=logger)
 
     # Populate nodes
     im.publish_job(job_name=config_helper.test_job_name,
@@ -49,15 +49,15 @@ def test_publish_job(config_helper, redis_driver, ingestion_manager, nodes, edge
     assert num_stored_edges == len(edges)
 
 
-def test_process_job(config_helper, ingestion_manager):
-    commons.purge_redis_database()
-    commons.purge_neo4j_database()
-    commons.init_redis_test_data()
+def test_process_job(config_helper, ingestion_manager, redis_db, logger, neo):
+    commons.purge_redis_database(redis_db=redis_db, log=logger)
+    commons.purge_neo4j_database(log=logger, neo=neo)
+    commons.init_redis_test_data(im=ingestion_manager)
     im = ingestion_manager
     im.process_redis_content(translation_id=config_helper.test_job_name, request_id='unit-testing')
     query = f'MATCH (:{config_helper.test_labels[0]}) RETURN COUNT(*) AS count'
-    count = commons.neo.pull_query(query=query).value()[0]
+    count = neo.pull_query(query=query).value()[0]
     assert count == config_helper.number_of_test_nodes
     query = f'MATCH ()-[:{config_helper.test_edge_type}]->() RETURN COUNT(*) AS count'
-    count = commons.neo.pull_query(query=query).value()[0]
+    count = neo.pull_query(query=query).value()[0]
     assert count == config_helper.number_of_test_edges

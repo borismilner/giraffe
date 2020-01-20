@@ -8,11 +8,11 @@ from pyspark.sql.types import DecimalType
 
 
 @pytest.fixture(autouse=True)
-def run_around_tests():
-    commons.purge_elasticsearch_database()
-    commons.init_elastic_test_data()
+def run_around_tests(logger, elasticsearch):
+    commons.purge_elasticsearch_database(es=elasticsearch, log=logger)
+    commons.init_elastic_test_data(es=elasticsearch)
     yield
-    commons.init_elastic_test_data()
+    commons.init_elastic_test_data(es=elasticsearch)
 
 
 def test_get_spark_session(spark_helper):
@@ -31,8 +31,8 @@ def test_read_elasticsearch_index(config_helper, spark_helper, nodes):
         assert column_name in nodes[0].keys()
 
 
-def test_read_from_es_write_to_redis(config_helper, redis_driver, spark_helper):
-    commons.delete_redis_keys_prefix(prefix=f'{config_helper.test_redis_table_prefix}*')
+def test_read_from_es_write_to_redis(config_helper, redis_driver, spark_helper, redis_db, logger):
+    commons.delete_redis_keys_prefix(prefix=f'{config_helper.test_redis_table_prefix}*', redis_db=redis_db, log=logger)
     df: DataFrame = spark_helper.read_df_from_elasticsearch_index(index_name=config_helper.test_elasticsearch_index)
     spark_helper.write_df_to_redis(df=df, key_prefix=config_helper.test_redis_table_prefix)
     num_keys_written = 0
