@@ -30,14 +30,14 @@ class GiraffeEventType(Enum):
 
 
 class EventDispatcher:
-    def __init__(self, tcp_enabled: bool = True, tcp_host: str = 'localhost', tcp_port: int = 65432):
+    def __init__(self, external_monitoring_enabled: bool = True, monitoring_host: str = 'localhost', monitoring_port: int = 65432):
         self.listeners: List[Callable] = []
         self.log = log_helper.get_logger(logger_name='Event-Dispatcher')
-        self.tcp_server: Communicator = Communicator(host=tcp_host, port=tcp_port)
-        self.tcp_enabled = tcp_enabled
-        if self.tcp_enabled:
-            self.tcp_server.start_server()
-            atexit.register(self.tcp_server.server_socket.close)
+        self.monitoring_server: Communicator = Communicator(host=monitoring_host, port=monitoring_port)
+        self.external_monitoring_enabled = external_monitoring_enabled
+        if self.external_monitoring_enabled:
+            self.monitoring_server.start_server()
+            atexit.register(self.monitoring_server.server_socket.close)
 
     def dispatch_event(self, event: GiraffeEvent):
         self.log.debug(event.message)
@@ -47,9 +47,9 @@ class EventDispatcher:
             except Exception as exception:  # Assuming it's the fault of callback-author
                 self.log.warning(f'Failed calling a callback function: {exception}')
 
-        if self.tcp_enabled and len(self.tcp_server.listeners) > 0:
+        if self.external_monitoring_enabled and len(self.monitoring_server.listeners) > 0:
             try:
-                self.tcp_server.broadcast_to_clients(data=pickle.dumps(event).hex())
+                self.monitoring_server.broadcast_to_clients(data=pickle.dumps(event).hex())
             except Exception as exception:  # Some events are non-pickle-friendly
                 self.log.debug(f'Probably failed to pickle:\n{exception}')
 
