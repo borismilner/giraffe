@@ -11,8 +11,8 @@ from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.EventDispatcher import GiraffeEvent
-from giraffe.helpers.EventDispatcher import GiraffeEventType
+from giraffe.monitoring.giraffe_event import GiraffeEvent
+from giraffe.monitoring.giraffe_event import GiraffeEventType
 from neo4j import BoltStatementResult
 from neo4j import BoltStatementResultSummary
 from neo4j import GraphDatabase

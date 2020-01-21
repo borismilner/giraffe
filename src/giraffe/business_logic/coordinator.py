@@ -10,11 +10,12 @@ from giraffe.exceptions.giraffe_exception import GiraffeException
 from giraffe.helpers import log_helper
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.EventDispatcher import GiraffeEvent
-from giraffe.helpers.EventDispatcher import GiraffeEventType
+
 from giraffe.helpers.multi_helper import MultiHelper
 from giraffe.helpers.structured_logging_fields import Field
 from giraffe.helpers.utilities import validate_is_file
+from giraffe.monitoring.giraffe_event import GiraffeEvent
+from giraffe.monitoring.giraffe_event import GiraffeEventType
 from giraffe.monitoring.progress_monitor import ProgressMonitor
 
 
@@ -61,7 +62,7 @@ class Coordinator:
         self.event_dispatcher.dispatch_event(
                 event=GiraffeEvent(
                         request_id=request_id,
-                        event_type=GiraffeEventType.STARTED,
+                        event_type=GiraffeEventType.STARTED_PROCESSING_REQUEST,
                         message=f'Starting processing request id: {request_id}',
                         arguments={'request_type': request_type,
                                    'request_content': str(request)
@@ -101,7 +102,7 @@ class Coordinator:
                         arguments={
                                 'request_id': request_id,
                                 'source_description': source_descriptions
-                        }
+                        },
                 )
         )
 
@@ -118,7 +119,7 @@ class Coordinator:
                                     'request_id': request_id,
                                     'message': message,
                                     'exception': not_implemented
-                            }
+                            },
                     )
             )
             raise not_implemented  # Rethrowing

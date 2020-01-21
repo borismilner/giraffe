@@ -9,9 +9,9 @@ from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.EventDispatcher import GiraffeEvent
-from giraffe.helpers.EventDispatcher import GiraffeEventType
 from giraffe.helpers.structured_logging_fields import Field
+from giraffe.monitoring.giraffe_event import GiraffeEvent
+from giraffe.monitoring.giraffe_event import GiraffeEventType
 from giraffe.monitoring.ingestion_request import IngestionRequest
 from giraffe.monitoring.ingestion_request import RequestStatus
 from giraffe.helpers.utilities import object_to_json
@@ -226,7 +226,7 @@ class ProgressMonitor:
 
     def on_giraffe_event(self, event: GiraffeEvent):
         event_type = event.event_type
-        if event_type == GiraffeEventType.STARTED:
+        if event_type == GiraffeEventType.STARTED_PROCESSING_REQUEST:
             self.task_started(request_id=event.request_id,
                               request_type=event.arguments['request_type'],
                               request_content=event.arguments['request_content'])

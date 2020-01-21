@@ -20,9 +20,9 @@ from giraffe.data_access.redis_db import RedisDB
 from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.EventDispatcher import GiraffeEvent
-from giraffe.helpers.EventDispatcher import GiraffeEventType
 from giraffe.helpers.utilities import validate_is_file
+from giraffe.monitoring.giraffe_event import GiraffeEvent
+from giraffe.monitoring.giraffe_event import GiraffeEventType
 from giraffe.monitoring.progress_monitor import ProgressMonitor
 
 from waitress import serve
@@ -127,10 +127,11 @@ if __name__ == '__main__':
             abort(not_acceptable_error_code, failure_message)
 
         request_received_message = f'Received a request from {request.remote_addr}: {client_request}'
+        request_id = f"{client_request['request_id']}" if 'request_id' in client_request else 'UNASSIGNED'
         event_dispatcher.dispatch_event(
                 event=GiraffeEvent(
-                        request_id=None,
-                        event_type=GiraffeEventType.GENERAL_EVENT,
+                        request_id=request_id,
+                        event_type=GiraffeEventType.RECEIVED_REQUEST,
                         message=request_received_message,
                         arguments={
                                 'client_ip': request.remote_addr,
@@ -195,7 +196,7 @@ if __name__ == '__main__':
 
     @app.route('/register_monitor', methods=['GET'])
     def register_monitor():
-        event_dispatcher.tcp_server.accept_client_connection()
+        event_dispatcher.tcp_server.accept_connection()
         return 'TCP Monitor attached'
 
 

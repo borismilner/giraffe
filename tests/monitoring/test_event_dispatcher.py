@@ -2,7 +2,7 @@ from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.EventDispatcher import GiraffeEvent
 
 
-def dont_test_event_dispatcher(config_helper):
+def test_event_dispatcher(config_helper):
     callback_was_called = False
     event: GiraffeEvent = None
 
@@ -11,7 +11,7 @@ def dont_test_event_dispatcher(config_helper):
         event = callback_event
         callback_was_called = True
 
-    ed = EventDispatcher()
+    ed = EventDispatcher(external_monitoring_enabled=False)
     ed.register_callback(callback=do_something)
 
     request_id = 'x'
