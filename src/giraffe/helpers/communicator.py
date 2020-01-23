@@ -1,12 +1,11 @@
 import atexit
 import pickle
 import select
+from concurrent.futures.thread import ThreadPoolExecutor
 from queue import Queue, Empty
 import socket
 import threading
-import time
 
-import requests
 from giraffe.helpers import log_helper
 from enum import Enum, auto
 
@@ -22,6 +21,7 @@ class CommunicatorMode(Enum):
 
 class Communicator:
     def __init__(self, mode: CommunicatorMode, host: str = 'localhost', port: int = 65432):
+        self.lock = threading.Lock()
         self._host = host
         self._port = port
         self._mode = mode
@@ -33,11 +33,13 @@ class Communicator:
             self.buffer = bytearray
         else:
             self._is_client = False
+            self.thread_pool = ThreadPoolExecutor(max_workers=2)
             self.listeners = []
             self.log = log_helper.get_logger(logger_name='Server-Communicator')
         atexit.register(self.stop)
+        self.__start()
 
-    def start(self):
+    def __start(self):
         connection_host_and_port = (self._host, self._port)
         if self._is_client:
             self.log.info(f'Client is connecting to host {self._host}, port {self._port}')
@@ -47,17 +49,23 @@ class Communicator:
             self.log.info(f'Server is available at host {self._host}, port {self._port}')
             self.socket.bind(connection_host_and_port)
             self.socket.listen()
+            self.thread_pool.submit(self.__accept_connection)
 
-    def accept_connection(self):
-        self.log.info('Awaiting connection from a TCP client.')
-        client_socket, address = self.socket.accept()
-        self.log.info(f'Accepted connection from {address}')
-        self.listeners.append(client_socket)
+    def __accept_connection(self):
+        while True:
+            with self.lock:
+                self.log.info('Awaiting connection from a TCP client.')
+                client_socket, address = self.socket.accept()
+                self.log.info(f'Accepted connection from {address}')
+                self.listeners.append(client_socket)
 
     def stop(self):
         self.socket.close()
 
     def broadcast_to_clients(self, data):
+        readable, writable, exceptional = select.select(self.listeners, [], [])
+        for closed_client_socket in exceptional:  # Remove disconnected client-sockets
+            self.listeners.remove(closed_client_socket)
         for client_socket in self.listeners:
             client_socket.sendall(bytes(data + '\r\n', encoding='utf-8'))
 
@@ -71,7 +79,7 @@ class Communicator:
                 buffer += self.socket.recv(buffer_size)
             else:
                 while not q.empty():
-                    yield q.get()
+                    yield q.get().decode(encoding='utf-8')
                 return
             messages = buffer.split(b'\r\n')
             partial_end = messages[-1] != b''
@@ -97,10 +105,3 @@ class Communicator:
 
     def set_client_timeout_seconds(self, seconds: int):
         self.socket.settimeout(seconds)
-
-    def request_client_registration(self):
-        t = threading.Thread(target=lambda: requests.get('http://localhost:9001/register_monitor'))
-        t.start()
-        time.sleep(2)
-        self.start()
-        t.join()

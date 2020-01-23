@@ -8,10 +8,8 @@ from giraffe.monitoring.giraffe_event import GiraffeEventType
 import tests.utilities.timing_utilities as timing_utils
 
 
-# TODO: Make it pass along with all other tests - currently passes only when ran alone (and it seems fine).
 def test_integration(ingestion_endpoint, config_helper, logger, white_list_file_path, redis_db, neo):
     monitor = Communicator(mode=CommunicatorMode.CLIENT)
-    monitor.request_client_registration()
     commons.purge_redis_database(redis_db=redis_db, log=logger)
     commons.purge_neo4j_database(log=logger, neo=neo)
 

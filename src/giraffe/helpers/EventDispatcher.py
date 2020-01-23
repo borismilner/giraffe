@@ -9,13 +9,14 @@ from giraffe.monitoring.giraffe_event import GiraffeEvent
 
 
 class EventDispatcher:
-    def __init__(self, external_monitoring_enabled: bool = True, monitoring_host: str = 'localhost', monitoring_port: int = 65432):
+    def __init__(self,
+                 monitoring_host: str = 'localhost',
+                 monitoring_port: int = 65432):
         self.listeners: List[Callable] = []
         self.log = log_helper.get_logger(logger_name='Event-Dispatcher')
-        self.tcp_server: Communicator = Communicator(mode=CommunicatorMode.SERVER, host=monitoring_host, port=monitoring_port)
-        self.external_monitoring_enabled = external_monitoring_enabled
-        if self.external_monitoring_enabled:
-            self.tcp_server.start()
+        self.tcp_server: Communicator = Communicator(mode=CommunicatorMode.SERVER,
+                                                     host=monitoring_host,
+                                                     port=monitoring_port)
 
     def dispatch_event(self, event: GiraffeEvent):
         self.log.debug(event.message)
@@ -25,7 +26,7 @@ class EventDispatcher:
             except Exception as exception:  # Assuming it's the fault of callback-author
                 self.log.warning(f'Failed calling a callback function: {exception}')
 
-        if self.external_monitoring_enabled and len(self.tcp_server.listeners) > 0:
+        if len(self.tcp_server.listeners) > 0:
             # noinspection PyBroadException
             try:
                 message = f'{dill.dumps(event).hex()}'

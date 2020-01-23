@@ -196,7 +196,7 @@ if __name__ == '__main__':
 
     @app.route('/register_monitor', methods=['GET'])
     def register_monitor():
-        event_dispatcher.tcp_server.accept_connection()
+        event_dispatcher.tcp_server.__accept_connection()
         return 'TCP Monitor attached'
 
 
