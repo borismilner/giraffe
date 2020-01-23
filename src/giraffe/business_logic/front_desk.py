@@ -194,12 +194,6 @@ if __name__ == '__main__':
         abort(200, 'Done.')
 
 
-    @app.route('/register_monitor', methods=['GET'])
-    def register_monitor():
-        event_dispatcher.tcp_server.__accept_connection()
-        return 'TCP Monitor attached'
-
-
     @app.route('/ping', methods=['GET'])
     def ping():
         abort(200, 'Pong')
