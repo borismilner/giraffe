@@ -1,3 +1,6 @@
+dill
+pyzmq
+networkx
 psutil
 fluent
 findspark
