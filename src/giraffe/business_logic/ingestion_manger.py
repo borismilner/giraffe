@@ -12,6 +12,8 @@ from giraffe.helpers import utilities
 from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.multi_helper import MultiHelper
+from giraffe.monitoring.giraffe_event import GiraffeEvent
+from giraffe.monitoring.giraffe_event import GiraffeEventType
 from redis import Redis
 
 
@@ -22,7 +24,10 @@ class IngestionManager:
 
     supported_operations: List[str]
 
-    def __init__(self, config_helper: ConfigHelper, multi_helper: MultiHelper, event_dispatcher: EventDispatcher):
+    def __init__(self,
+                 config_helper: ConfigHelper,
+                 multi_helper: MultiHelper,
+                 event_dispatcher: EventDispatcher):
         self.is_ready = False
         self.event_dispatcher = event_dispatcher
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
@@ -122,9 +127,15 @@ class IngestionManager:
 
             parallel_results = MultiHelper.wait_on_futures(iterable=all_futures)
             for exception in parallel_results.exceptions:
-                pass
-                # TODO: fire an event
-                # self.progress_monitor.error(request_id=request_id,
-                #                             message='Failed pushing into neo4j',
-                #                             exception=exception)
+                self.event_dispatcher.dispatch_event(
+                        event=GiraffeEvent(
+                                request_id=request_id,
+                                event_type=GiraffeEventType.ERROR,
+                                message=str(exception),
+                                arguments={
+                                        'exception': exception,
+                                        'message': str(exception)
+                                }
+                        )
+                )
             all_futures.clear()
