@@ -1,13 +1,10 @@
-import time
-from concurrent.futures import ThreadPoolExecutor
-
 from giraffe.helpers.communicator import Communicator
 from giraffe.helpers.communicator import CommunicatorMode
-from giraffe.helpers.multi_helper import MultiHelper
 
 test_port = 5555
 
 
+# TODO: Investigate: May fail with "OSError: [WinError 10022] An invalid argument was supplied" when run with other tests
 def test_communicator():
     server = Communicator(mode=CommunicatorMode.SERVER, port=test_port)
     client = Communicator(mode=CommunicatorMode.CLIENT, port=test_port)

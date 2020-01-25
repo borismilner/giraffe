@@ -5,22 +5,17 @@ import os
 import sys
 from datetime import datetime
 from json import JSONDecodeError
-from logging.handlers import RotatingFileHandler
 from typing import List
 
 from flask import abort
 from flask import Flask
 from flask import request
-from giraffe.business_logic.abstract.data_to_graph_translation_provider import DataToGraphEntitiesProvider
+from giraffe.business_logic.env_provider import EnvProvider
 from giraffe.business_logic.coordinator import Coordinator
-from giraffe.business_logic.data_to_entities_translators.mock_translator import MockDataToGraphEntitiesProvider
-from giraffe.data_access.abstract.data_and_model_provider import DataAndModelProvider
-from giraffe.data_access.data_model_providers.mock_data_model_provider import MockDataAndModelProvider
 from giraffe.data_access.redis_db import RedisDB
-from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
 from giraffe.helpers.EventDispatcher import EventDispatcher
-from giraffe.helpers.utilities import validate_is_file
+from giraffe.helpers.utilities import timestamp_to_str
 from giraffe.monitoring.giraffe_event import GiraffeEvent
 from giraffe.monitoring.giraffe_event import GiraffeEventType
 from giraffe.monitoring.progress_monitor import ProgressMonitor
@@ -36,53 +31,19 @@ if __name__ == '__main__':
     parser.add_argument('--config_ini', type=str, required=False, default=None)
     args = parser.parse_known_args()
 
-    configuration_ini_file_path = args[0].config_ini
-    if configuration_ini_file_path is None:
-        config = config_helper.get_config()
-    else:
-        config_ini_file = configuration_ini_file_path
-        validate_is_file(file_path=config_ini_file)
-        config = config_helper.get_config(configurations_ini_file_path=config_ini_file)
+    env = EnvProvider(cmd_line_args=args)
 
     event_dispatcher = EventDispatcher()
-
-    logging_file_path = os.path.join(config.logs_storage_folder, 'giraffe.log')
-    file_handler = RotatingFileHandler(filename=logging_file_path,
-                                       mode='a',
-                                       maxBytes=1_000_000,
-                                       backupCount=3,
-                                       encoding='utf-8',
-                                       delay=False)
-    file_handler.setFormatter(log_helper.log_row_format)
-    log_helper.add_handler(handler=file_handler)
-
-    atexit.register(log_helper.stop_listener)
-
     log = log_helper.get_logger(__name__)
 
-    execution_env = config.execution_environment
-
-    log.info(f'Execution environment: {execution_env}')
-
-    # Instantiating providers based on the execution environment
-
-    if execution_env == 'dev':
-        data_and_model_provider: DataAndModelProvider = MockDataAndModelProvider()
-        data_to_graph_entities_provider: DataToGraphEntitiesProvider = MockDataToGraphEntitiesProvider()
-    elif execution_env == 'cortex':
-        raise NotImplementedError('Implemented in cortex')
-    else:
-        log.info(f'Unexpected value in configuration file for execution_environment: {execution_env}')
-        sys.exit(1)
+    log.info(f'Execution environment: {env.execution_env}')
 
     not_acceptable_error_code = 406
 
     log.debug('Initializing coordinator module.')
-    progress_monitor = ProgressMonitor(event_dispatcher=event_dispatcher, config=config)
+    progress_monitor = ProgressMonitor(event_dispatcher=event_dispatcher, config=env.config)
     atexit.register(progress_monitor.dump_and_clear_memory)
-    coordinator = Coordinator(config_helper=config,
-                              data_and_model_provider=data_and_model_provider,
-                              data_to_graph_translator=data_to_graph_entities_provider,
+    coordinator = Coordinator(env=env,
                               progress_monitor=progress_monitor,
                               event_dispatcher=event_dispatcher)
     if not coordinator.is_ready:
@@ -93,11 +54,11 @@ if __name__ == '__main__':
 
     app = Flask(__name__)
 
-    supported_request_types = [key for key in config.required_request_fields.keys()]
+    supported_request_types = [key for key in env.config.required_request_fields.keys()]
 
 
     def get_invalid_fields(received_request: dict) -> List[str]:
-        template = config.required_request_fields[received_request['request_type']]
+        template = env.config.required_request_fields[received_request['request_type']]
         invalid_fields = []
         fields_missing_from_request = [key for key in template.keys() if key not in received_request]
         invalid_fields.extend([f'Field {key} is missing.' for key in fields_missing_from_request])
@@ -106,7 +67,7 @@ if __name__ == '__main__':
         return invalid_fields
 
 
-    @app.route(config.ingestion_endpoint, methods=['POST'])
+    @app.route(env.config.ingestion_endpoint, methods=['POST'])
     def ingest():
         client_request = None
         try:
@@ -140,7 +101,7 @@ if __name__ == '__main__':
                 )
         )
 
-        request_type_field_names = config.request_mandatory_field_names
+        request_type_field_names = env.config.request_mandatory_field_names
 
         # Start of validations
         for required_field_name in request_type_field_names:
@@ -163,13 +124,13 @@ if __name__ == '__main__':
                                             callback=coordinator.processing_success_callback,
                                             error_callback=coordinator.processing_error_callback)
 
-        now = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+        now = timestamp_to_str(timestamp=datetime.now())
         return f"[{now}] Received: {client_request}."  # Success 200 OK
 
 
-    @app.route(config.redis_get_all_endpoint, methods=['GET'])
+    @app.route(env.config.redis_get_all_endpoint, methods=['GET'])
     def all_redis_keys():
-        r = RedisDB(event_dispatcher=event_dispatcher, config=config)
+        r = RedisDB(event_dispatcher=event_dispatcher, env=env)
         all_keys = r.get_key_by_pattern(key_pattern='*', return_list=True)
         return f'All redis keys: {all_keys}'
 
@@ -179,7 +140,7 @@ if __name__ == '__main__':
         request_id = request.args.get('request_id')
         task = progress_monitor.get_task(task_id=request_id)
         if task is None:
-            file_path = os.path.join(config.progress_monitor_dump_folder, request_id)
+            file_path = os.path.join(env.config.progress_monitor_dump_folder, request_id)
             if os.path.isfile(file_path):
                 with open(file_path, 'r') as json_on_hd:
                     return json_on_hd.read()
@@ -199,5 +160,5 @@ if __name__ == '__main__':
         abort(200, 'Pong')
 
 
-    log.info(f'Front-Desk shall be available on port: {config.front_desk_port}')
-    serve(app, host=config.front_desk_ip, port=config.front_desk_port)
+    log.info(f'Front-Desk shall be available on port: {env.config.front_desk_port}')
+    serve(app, host=env.config.front_desk_ip, port=env.config.front_desk_port)

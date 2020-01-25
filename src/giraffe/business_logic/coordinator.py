@@ -1,14 +1,12 @@
 import datetime
 from multiprocessing.pool import ThreadPool
 
-from giraffe.business_logic.abstract.data_to_graph_translation_provider import DataToGraphEntitiesProvider
 from giraffe.business_logic.abstract.data_to_graph_translation_provider import translation_request
+from giraffe.business_logic.env_provider import EnvProvider
 from giraffe.business_logic.ingestion_manger import IngestionManager
-from giraffe.data_access.abstract.data_and_model_provider import DataAndModelProvider
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.exceptions.giraffe_exception import GiraffeException
 from giraffe.helpers import log_helper
-from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.helpers.EventDispatcher import EventDispatcher
 
 from giraffe.helpers.multi_helper import MultiHelper
@@ -21,9 +19,7 @@ from giraffe.monitoring.progress_monitor import ProgressMonitor
 
 class Coordinator:
     def __init__(self,
-                 config_helper: ConfigHelper,
-                 data_and_model_provider: DataAndModelProvider,
-                 data_to_graph_translator: DataToGraphEntitiesProvider,
+                 env: EnvProvider,
                  progress_monitor: ProgressMonitor,
                  event_dispatcher: EventDispatcher):
         self.event_dispatcher = event_dispatcher
@@ -32,14 +28,13 @@ class Coordinator:
         self.log = log_helper.get_logger(logger_name=__name__)
         # noinspection PyBroadException
         try:
-            self.config = config_helper
-            self.redis_db = RedisDB(event_dispatcher=self.event_dispatcher, config=self.config)
-            self.data_and_model_provider = data_and_model_provider
+            self.redis_db = RedisDB(event_dispatcher=self.event_dispatcher, env=env)
+            self.data_and_model_provider = env.data_and_model_provider
             self.thread_pool = ThreadPool()
-            self.data_to_graph_translator = data_to_graph_translator
-            self.multi_helper = MultiHelper(config=self.config)
+            self.data_to_graph_translator = env.data_to_graph_entities_provider
+            self.multi_helper = MultiHelper(config=env.config)
             self.im = IngestionManager(
-                    config_helper=self.config,
+                    env=env,
                     multi_helper=self.multi_helper,
                     event_dispatcher=self.event_dispatcher
             )

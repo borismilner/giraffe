@@ -38,7 +38,7 @@ def test_progress_monitor_simple_scenario(config_helper, event_dispatcher):
     assert task.status == RequestStatus.DONE
     now_timestamp = int(datetime.now().timestamp())
     assert task.end_time_unix is not None
-    assert now_timestamp - 1 <= task.end_time_unix <= now_timestamp
+    assert now_timestamp - 2 <= task.end_time_unix <= now_timestamp
 
     for status in RequestStatus:
         task.set_status(status)

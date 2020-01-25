@@ -5,10 +5,10 @@ from typing import Iterator
 from typing import List
 
 import redis
+from giraffe.business_logic.env_provider import EnvProvider
 from giraffe.exceptions.logical import MissingKeyError
-from giraffe.helpers import config_helper
 from giraffe.helpers import log_helper
-from giraffe.helpers.dev_spark_helper import DevSparkHelper
+from giraffe.helpers.abstract.spark_helper import SparkHelper
 from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.structured_logging_fields import Field
 from pyspark.sql import DataFrame
@@ -16,12 +16,13 @@ from redis import Redis
 
 
 class RedisDB(object):
-    def __init__(self, event_dispatcher: EventDispatcher, config=config_helper.get_config()):
+    def __init__(self, event_dispatcher: EventDispatcher, env: EnvProvider):
         self.log = log_helper.get_logger(logger_name=f'{self.__class__.__name__}_{threading.current_thread().name}')
         self.log.debug(f'Initialising redis driver.')
-        self.driver: Redis = redis.StrictRedis(host=config.redis_host_address, port=config.redis_port, decode_responses=True)
-        self.config = config
-        self.spark_helper: DevSparkHelper = DevSparkHelper(config=self.config)
+        self.config = env.config
+        self.driver: Redis = redis.StrictRedis(host=self.config.redis_host_address, port=self.config.redis_port, decode_responses=True)
+        self.spark_helper: SparkHelper = env.spark_helper
+        self.event_dispatcher = event_dispatcher
         atexit.register(self.driver.close)
 
     def __enter__(self):
@@ -85,7 +86,6 @@ class RedisDB(object):
             yield [x[1] for x in batch[0][1]]
             bookmark = batch[0][1][-1][0]
             batch = r.xread(streams={stream_name: bookmark}, count=batch_size, block=milliseconds_to_block)
-        return
 
     def write_translator_result_to_redis(self, entry_dict: dict, source_name: str, request_id: str):
         try:

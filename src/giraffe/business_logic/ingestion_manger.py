@@ -2,6 +2,7 @@ import pickle
 import collections
 from typing import List
 
+from giraffe.business_logic.env_provider import EnvProvider
 from giraffe.data_access.neo_db import NeoDB
 from giraffe.data_access.redis_db import RedisDB
 from giraffe.exceptions.logical import MissingKeyError
@@ -9,7 +10,6 @@ from giraffe.exceptions.logical import UnexpectedOperation
 from giraffe.exceptions.technical import TechnicalError
 from giraffe.helpers import log_helper
 from giraffe.helpers import utilities
-from giraffe.helpers.config_helper import ConfigHelper
 from giraffe.helpers.EventDispatcher import EventDispatcher
 from giraffe.helpers.multi_helper import MultiHelper
 from giraffe.monitoring.giraffe_event import GiraffeEvent
@@ -25,18 +25,17 @@ class IngestionManager:
     supported_operations: List[str]
 
     def __init__(self,
-                 config_helper: ConfigHelper,
+                 env: EnvProvider,
                  multi_helper: MultiHelper,
                  event_dispatcher: EventDispatcher):
         self.is_ready = False
         self.event_dispatcher = event_dispatcher
         self.log = log_helper.get_logger(logger_name=self.__class__.__name__)
-        self.config = config_helper
+        self.config = env.config
         try:
             self.neo_db: NeoDB = NeoDB(config=self.config,
                                        event_dispatcher=self.event_dispatcher)
-            self.redis_db: RedisDB = RedisDB(config=self.config,
-                                             event_dispatcher=self.event_dispatcher)
+            self.redis_db: RedisDB = RedisDB(env=env, event_dispatcher=self.event_dispatcher)
             self.multi_helper: MultiHelper = multi_helper
             self.is_ready = True
         except Exception as the_exception:
