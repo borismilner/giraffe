@@ -4,16 +4,13 @@
 ## Features  
 - [x] Neo4j Integration  
 - [x] Redis Integration  
-- [x] Unit Testing  
+- [x] Progress Monitoring
+- [x] Unit Tests
 
 ## Tested
-- Python 3.7, 3.8
+- Python 3.6, 3.7, 3.8
 - Neo4j 3.5.12 community edition (Linux/Windows)
 - Redis 5.0.3 (Linux)
-  
-## Things To Take Care Of  
-- [ ] Improve multi-processing
-- [ ] Data removal/marking in redis after consumption
 
 ## Things To Know
 1. **REDIS Key/Value Structure**
@@ -36,6 +33,3 @@
 all nodes in a batch must have the same label.
 1. In **edge-ingestion**, while it is possible to match source and target nodes by their _uid (without their labels)  
 it is too slow and thus it currently is mandatory to provide both.
-
-## Main Classes
-![alt text](resources/images/main_classes.png "Main Classes")
