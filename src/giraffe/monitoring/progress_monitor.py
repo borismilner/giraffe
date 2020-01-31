@@ -13,7 +13,6 @@ from giraffe.helpers.structured_logging_fields import Field
 from giraffe.monitoring.giraffe_event import GiraffeEvent
 from giraffe.monitoring.giraffe_event import GiraffeEventType
 from giraffe.monitoring.ingestion_request import IngestionRequest
-from giraffe.monitoring.ingestion_request import RequestStatus
 from giraffe.helpers.utilities import object_to_json
 from giraffe.helpers import utilities
 
@@ -50,21 +49,21 @@ class ProgressMonitor:
                                  source_description):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.STARTED_READING_DATA_AND_MODELS)
+            task.set_status(GiraffeEventType.FETCHING_DATA_AND_MODELS)
             self.log.debug(f'Fetching data-model pairs from source/s described in: {source_description}')
 
     # 2. Finished reading source_data-model pairs.
     def received_data_and_models(self, request_id: str, data_models: Iterable[data_and_graph_model]):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.FINISHED_READING_DATA_AND_MODELS)
+            task.set_status(GiraffeEventType.FINISHED_FETCHING_DATA_AND_MODELS)
             task.map_source_to_model = {item.source_name: item.graph_model for item in data_models}
 
     # 3. Translating data according to model and writing the results into redis.
     def processing_source_into_redis(self, request_id: str, source_name: str):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.TRANSLATING_INTO_REDIS)
+            task.set_status(GiraffeEventType.WRITING_GRAPH_ELEMENTS_INTO_REDIS)
             self.log.info(f'Processing: {source_name} for request: {request_id}')
             self.log.admin({
                     Field.request_ip: request_id,
@@ -78,12 +77,14 @@ class ProgressMonitor:
 
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.READY_TO_WRITE_FROM_REDIS_INTO_NEO)
+            task.set_status(GiraffeEventType.REDIS_IS_READY_FOR_CONSUMPTION)
             number_of_successful_writes_to_redis = len(parallel_results.results)
             number_of_failed_writes_to_redis = len(parallel_results.exceptions)
             if number_of_failed_writes_to_redis > 0:
                 self.log.info(f'Failed redis-writers: {number_of_failed_writes_to_redis}')
                 self.log.admin({Field.failed_redis_writers: number_of_failed_writes_to_redis})
+            elif number_of_successful_writes_to_redis == 0:
+                self.log.warning('Nothing has been written to redis !')  # TODO: Raise an event
             else:
                 self.log.info(f'All {number_of_successful_writes_to_redis} redis-writers finished successfully.')
                 self.log.admin({
@@ -112,11 +113,6 @@ class ProgressMonitor:
                 redis_sizes[key] = redis_db.get_cardinality(key=key)
                 self.log.debug(f'{key} size in redis = {redis_sizes[key]}')
 
-            self.log.admin({
-                    Field.request_id: request_id,
-                    Field.redis_sizes: redis_sizes
-            })
-
     # 6. Key has been successfully written from redis into neo4j.
     def key_written_from_redis_into_neo(self,
                                         request_id: str,
@@ -131,12 +127,14 @@ class ProgressMonitor:
                      request_id: str):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.DONE)
+            task.set_status(GiraffeEventType.DONE_PROCESSING_REQUEST)
             if set(task.finished_keys) == task.get_redis_keys():
                 self.log.info(f'All redis keys successfully written into neo4j : {task.get_redis_keys()}')
             else:
                 self.log.error(f'The following expected keys do not seem to have been written: {task.get_redis_keys() - set(task.finished_keys)}')
                 # TODO: Raise exception?
+            if len(task.errors) > 0:
+                self.log.error(f'The following errors were encountered during execution:\n {task.errors}')
             self.dump_to_hard_drive_and_fluent()
 
     # Intermediate steps
@@ -174,7 +172,7 @@ class ProgressMonitor:
                                  request_id: str):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(status=RequestStatus.DELETING_KEYS_FROM_REDIS)
+            task.set_status(status=GiraffeEventType.DELETING_REDIS_KEYS)
 
     def merging_into_neo4j(self,
                            request_id: str,
@@ -201,7 +199,7 @@ class ProgressMonitor:
               exception: Exception = None):
         with self.lock:
             task = self.get_task(task_id=request_id)
-            task.set_status(RequestStatus.ERROR)
+            task.set_status(GiraffeEventType.ERROR)
             if exception:
                 task.errors.append(f'{message}\n{exception}\b{traceback.format_exc()}')
                 self.log.error(exception, exc_info=True)

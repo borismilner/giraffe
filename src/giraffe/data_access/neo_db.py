@@ -1,5 +1,7 @@
 import atexit
 import threading
+from random import randint
+from time import sleep
 from typing import Dict
 from typing import List
 from typing import Tuple
@@ -91,19 +93,33 @@ class NeoDB(object):
             self.indices_cache_label_property.remove(label_and_property)
         return summary
 
-    def run_query(self, query: str, **parameters) -> BoltStatementResultSummary:
+    def run_query(self, query: str, retries: int = 5, **parameters) -> BoltStatementResultSummary:
         summary: BoltStatementResultSummary
-        with self._driver.session() as session:
-            with session.begin_transaction() as tx:
-                result = tx.run(query, **parameters)
-                try:
-                    summary = result.consume()
-                except CypherSyntaxError as e:
-                    tx.success = False
-                    tx.close()
-                    raise QuerySyntaxError(e)
-                tx.success = True
-        return summary
+        retries_left = retries
+        last_exception = None
+        while retries_left > 0:
+            with self._driver.session() as session:
+                with session.begin_transaction() as tx:
+                    result = tx.run(query, **parameters)
+                    try:
+                        summary = result.consume()
+                    except CypherSyntaxError as e:
+                        tx.success = False
+                        tx.close()
+                        raise QuerySyntaxError(e)
+                    except Exception as unexpected_exception:
+                        last_exception = unexpected_exception
+                        time_to_sleep = randint(5, 20)
+                        retries_left -= 1
+                        self.log.debug(f'Retrying ({retries_left} retries left - sleeping {time_to_sleep} seconds) : [{unexpected_exception}]')
+                        tx.success = False
+                        tx.close
+                        sleep(time_to_sleep)
+                        continue
+                    tx.success = True
+            return summary
+        self.log.error(f'Failed after {retries} retries - last exception: {last_exception}', exc_info=True)
+        raise last_exception  # TODO: Raise an error event
 
     def pull_query(self, query: str) -> BoltStatementResult:
 
