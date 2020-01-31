@@ -5,7 +5,7 @@
 - [x] Neo4j Integration  
 - [x] Redis Integration  
 - [x] Progress Monitoring
-- [x] Unit Tests
+- [x] Unit/Integration Tests
 
 ## Tested
 - Python 3.6, 3.7, 3.8
